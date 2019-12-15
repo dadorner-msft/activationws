@@ -3,9 +3,9 @@
 <#
 ========================================================================
 	File:		Activate-Product.ps1
-	Version:	0.15.1
+	Version:	0.15.2
 	Author:		Daniel Dorner
-	Date:		12/13/2019
+	Date:		12/15/2019
 	
 	Purpose:	Installs and activates a product key
 	
@@ -75,7 +75,7 @@ function LogAndConsole($Message)
 	try {
 		if (!$logInitialized) {
 			"{0}; <---- Starting {1} on host {2}  ---->" -f (Get-Date), $MyInvocation.ScriptName, $env:COMPUTERNAME | Out-File -FilePath $LogFile -Append -Force
-			"{0}; {1} version: {2}" -f (Get-Date), $MyInvocation.ScriptName, $scriptVersion | Out-File -FilePath $LogFile -Append -Force
+			"{0}; {1} version: {2}" -f (Get-Date), $script:MyInvocation.MyCommand.Name, $scriptVersion | Out-File -FilePath $LogFile -Append -Force
 			"{0}; Initialized logging at {1}" -f (Get-Date), $LogFile | Out-File -FilePath $LogFile -Append -Force
 			
 			$script:logInitialized = $true
@@ -87,6 +87,14 @@ function LogAndConsole($Message)
 		}
 		
 		Write-Host $Message
+		
+	} catch [System.IO.DirectoryNotFoundException] {
+		$script:LogFile = "$env:TEMP\Activate-Product.log"
+		Write-Host "[Warning] Could not find a part of the path $LogFile. The output would be redirected to $LogFile." 
+		
+	} catch [System.UnauthorizedAccessException] {
+		$script:LogFile = "$env:TEMP\Activate-Product.log"
+		Write-Host "[Warning] Access to the path $LogFile is denied. The output would be redirected to $LogFile."
 		
 	} catch {
 		Write-Host  "[Error] Exception calling 'LogAndConsole':" $_.Exception.Message
@@ -249,7 +257,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 }
 
 function Main {
-	$scriptVersion = "0.15.1"
+	$scriptVersion = "0.15.2"
 	LogAndConsole ""
 	InstallAndActivateProductKey($ProductKey)
 }
