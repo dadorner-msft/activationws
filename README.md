@@ -53,7 +53,7 @@ ActivationWs web service requires access to `https://activation.sls.microsoft.co
 
 > I'd like to evaluate ActivationWs, however I do not have access to the Extended Security MAK key yet. How can I evaluate ActivationWs beforehand?
 
-You can evaluate ActivationWs by activating Windows using your Windows 7 or Server 2008/R2 MAK key.
+You can evaluate ActivationWs by using your Windows MAK key.
 
 > After successfully deploying the licenses using ActivationWs, how can I verify the deployment of the extended security updates?
 
