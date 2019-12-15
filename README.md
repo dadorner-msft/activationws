@@ -12,9 +12,9 @@
 
 ## Introduction
 
-ActivationWs is a new alternative MAK key distribution and activation solution. It was designed for organizations who are facing challenges in the deployment and activation of an Extended Security MAK key. 
+Welcome to the ActivationWs GitHub repository! ActivationWs is a new alternative MAK key distribution and activation solution. It includes an ASP.NET web service and a PowerShell script to deploy and activate the ESU MAK key. 
 
-ActivationWs eliminates the pre-requisites that VAMT brings along and reduces obstacles you could face in the product key activation process. ActivationWs provides you with a “pull-based” activation solution and can also be used to support you in offline-based scenarios, no calls to the Microsoft Licensing Activation Center are needed. 
+ActivationWs was designed for organizations who are facing challenges in the deployment and activation of an Extended Security MAK key. It eliminates the pre-requisites that VAMT brings along and reduces obstacles you could face in the product key activation process. ActivationWs provides you with a “pull-based” activation solution and can also be used to support you in offline-based scenarios, no calls to the Microsoft Licensing Activation Center are needed.
 
 [Back to ToC](#table-of-contents)
 
@@ -23,7 +23,7 @@ ActivationWs eliminates the pre-requisites that VAMT brings along and reduces ob
 ![activation-process](https://github.com/dadorner-msft/ActivationWs/blob/master/doc/images/activation-process.png) 
  
 1. The PowerShell script 'Activate-Product.ps1' is deployed to the clients (e.g. using ConfigMgr)
-2. The script installs the MAK key, queries the Installation ID and Product ID and sends a SOAP request to the ActivationWS web service (e.g. over port 80/443)
+2. The script installs the MAK key, queries the Installation ID and Product ID and sends a SOAP request to the ActivationWs web service (e.g. over port 80/443)
 *the ActivationWs web service is installed on a host on your internal network and requires internet connectivity (direct or via proxy). Windows 7 clients do not need to be connected to the internet
 3. Installation- and Product IDs are sent to the Microsoft BatchActivation Service
 4. Confirmation ID is returned to the ActivationWs web service, which will then return the Confirmation ID to the client
@@ -51,13 +51,21 @@ The preview of this solution can be installed from the [ActivationWs GitHub rele
 
 ActivationWs web service requires access to `https://activation.sls.microsoft.com`
 
+> I'd like to evaluate ActivationWs, however I do not have access to the Extended Security MAK key yet. How can I evaluate ActivationWs beforehand?
+
+> You can evaluate ActivationWs by activating Windows using your Windows 7 or Server 2008/R2 MAK key.
+
+> After successfully deploying the licenses using ActivationWs, how can I verify the deployment of the extended security updates?
+
+Please take a look at [this](https://techcommunity.microsoft.com/t5/Windows-IT-Pro-Blog/How-to-get-Extended-Security-Updates-for-eligible-Windows/ba-p/917807) blog article, which outlines the available updates to verify the deployment.
+
 > Activate-Product.ps1 fails with "[Error] Failed to install the product key."
 
 - Verify that you meet the ESU requiements, listed here: [How-to-get-Extended-Security-Updates](https://techcommunity.microsoft.com/t5/Windows-IT-Pro-Blog/How-to-get-Extended-Security-Updates-for-eligible-Windows/ba-p/917807)
 - Run the 'Activate-License.ps1' script as administrator
 - Check your product key
 
-If it fails, even though you followed these steps, please run `slmgr.vbs /ipk <product key>` and check the result.
+If it fails even though you followed these steps, please run `slmgr.vbs /ipk <product key>` and check the result.
 
 > Activate-Product.ps1 fails with "[Error] Product activation failed (3221549105)."
 
