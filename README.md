@@ -14,7 +14,7 @@
 
 Welcome to the ActivationWs GitHub repository! ActivationWs is a new alternative MAK key distribution and activation solution. It includes an ASP.NET web service and a PowerShell script to install and activate the Extended Security MAK key. 
 
-ActivationWs was designed for organizations who are facing challenges in the deployment and activation of an Extended Security MAK key. It eliminates the pre-requisites that VAMT brings along and reduces obstacles you could face in the product key activation process. ActivationWs provides you with a “pull-based” activation solution and can also be used to support you in offline-based scenarios, no calls to the Microsoft Licensing Activation Center are needed.
+ActivationWs was designed for organizations who are facing challenges in the deployment and activation of an Extended Security MAK key. It eliminates the pre-requisites that VAMT needs and reduces obstacles you could face in the product key activation process. ActivationWs provides you with a “pull-based” activation solution and can also be used to support you in offline-based scenarios, no calls to the Microsoft Licensing Activation Center are needed.
 
 [Back to ToC](#table-of-contents)
 
@@ -100,7 +100,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct][conduct-cod
 
 ## Disclaimer
 
-This script code is provided as is with no guarantee or waranty concerning the usability or impact on systems and may be used, distributed, and modified in any way provided the parties agree and acknowledge the Microsoft or Microsoft Partners have neither accountabilty or responsibility for results produced by use of this script.
+This script code is provided "as is", with no guarantee or waranty concerning the usability or impact on systems and may be used, distributed, and modified in any way provided the parties agree and acknowledge the Microsoft or Microsoft Partners have neither accountabilty or responsibility for results produced by use of this script.
 
 Microsoft will not provide any support through any means.
 
