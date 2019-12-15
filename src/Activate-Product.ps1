@@ -1,5 +1,3 @@
-#Requires -RunAsAdministrator
-
 <#
 ========================================================================
 	File:		Activate-Product.ps1
