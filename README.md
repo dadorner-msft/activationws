@@ -41,7 +41,7 @@ The preview of this solution can be installed from the [ActivationWs GitHub rele
 1. Deploy the ActivationWs web service to IIS
 2. Run the PowerShell script on your clients to install and activate the license
 
-![Activate-License](https://github.com/dadorner-msft/activationws/blob/master/doc/images/activate-license-v0.14.0.0.gif)
+![Activate-License](https://github.com/dadorner-msft/activationws/blob/master/doc/images/activate-license-v0.15.2.gif)
 
 [Back to ToC](#table-of-contents)
 
