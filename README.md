@@ -24,22 +24,29 @@ ActivationWs was designed for organizations who are facing challenges in the dep
  
 1. The PowerShell script 'Activate-Product.ps1' is deployed to the clients (e.g. using ConfigMgr)
 2. The script installs the MAK key, queries the Installation ID and Product ID and sends a SOAP request to the ActivationWs web service (e.g. over port 80/443)
-*the ActivationWs web service is installed on a host on your internal network and requires internet connectivity (direct or via proxy). Windows 7 clients do not need to be connected to the internet
+*the ActivationWs web service is installed on a host on your internal network and requires internet connectivity (direct or via proxy) Windows 7 clients do not need to be connected to the internet
 3. Installation- and Product IDs are sent to the Microsoft BatchActivation Service
 4. Confirmation ID is returned to the ActivationWs web service, which will then return the Confirmation ID to the client
-5. The script deposits the Confirmation ID and finishes up the activation.
+5. The script deposits the Confirmation ID and finishes up the activation
 
 [Back to ToC](#table-of-contents)
 
 ## Installation
 The preview of this solution can be installed from the [ActivationWs GitHub releases page](https://github.com/dadorner-msft/ActivationWs/releases). Click on `Assets` to show the files available in the release.
 
+### Requirements
+
+#### ASP.NET web service
+- ActivationWs web service runs on IIS and requires the .NET Framework 4.6.
+- The web service also requires access to `https://activation.sls.microsoft.com`. A proxy server can be specified in the web.config file, when necessary.
+
 [Back to ToC](#table-of-contents)
 
 ## Usage
 
 1. Deploy the ActivationWs web service to IIS
-2. Run the PowerShell script on your clients to install and activate the license
+2. Verify that your devices meet the [ESU installation requirements](https://techcommunity.microsoft.com/t5/Windows-IT-Pro-Blog/How-to-get-Extended-Security-Updates-for-eligible-Windows/ba-p/917807)
+3. Run the PowerShell script 'Activate-Product.ps1' on your clients to install and activate the license
 
 ![Activate-License](https://github.com/dadorner-msft/activationws/blob/master/doc/images/Activate-License-v0.15.2.gif)
 
