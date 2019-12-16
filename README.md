@@ -3,8 +3,8 @@
 # Table of Contents
 <!-- toc -->
 - [Introduction](#introduction)
-- [Installation](#installation)
-- [Usage](#usage)
+- [Requirements](#requirements)
+- [Installation and Usage](#installation-and-usage)
 - [FAQ](#faq)
 - [Contributions are welcome](#contributions-are-welcome)
 - [Code of Conduct](#code-of-conduct)
@@ -15,8 +15,6 @@
 Welcome to the ActivationWs GitHub repository! ActivationWs is a new alternative MAK key distribution and activation solution. It includes an ASP.NET web service and a PowerShell script to install and activate the Extended Security MAK key. 
 
 ActivationWs was designed for organizations who are facing challenges in the deployment and activation of an Extended Security MAK key. It eliminates the pre-requisites that VAMT needs and reduces obstacles you could face in the product key activation process. ActivationWs provides you with a “pull-based” activation solution and can also be used to support you in offline-based scenarios, no calls to the Microsoft Licensing Activation Center are needed.
-
-[Back to ToC](#table-of-contents)
 
 ### How does ActivationWs work and how does it benefit you?
 
@@ -31,18 +29,14 @@ ActivationWs was designed for organizations who are facing challenges in the dep
 
 [Back to ToC](#table-of-contents)
 
-## Installation
-The preview of this solution can be installed from the [ActivationWs GitHub releases page](https://github.com/dadorner-msft/ActivationWs/releases). Click on `Assets` to show the files available in the release.
-
-### Requirements
-
-#### ASP.NET web service
-- ActivationWs web service runs on IIS and requires the .NET Framework 4.6.
-- The web service also requires access to `https://activation.sls.microsoft.com`. A proxy server can be specified in the web.config file, when necessary.
+## Requirements
+ActivationWs web service runs on IIS and requires the .NET Framework 4.6. It also requires access to `https://activation.sls.microsoft.com`. A proxy server can be specified in the web.config file, when necessary.
 
 [Back to ToC](#table-of-contents)
 
-## Usage
+## Installation and Usage
+
+The latest preview of this solution can be downloaded from the [ActivationWs GitHub releases page](https://github.com/dadorner-msft/ActivationWs/releases). Click on `Assets` to show the files available in the release.
 
 1. Deploy the ActivationWs web service to IIS
 2. Verify that your devices meet the [ESU installation requirements](https://techcommunity.microsoft.com/t5/Windows-IT-Pro-Blog/How-to-get-Extended-Security-Updates-for-eligible-Windows/ba-p/917807)
@@ -54,19 +48,19 @@ The preview of this solution can be installed from the [ActivationWs GitHub rele
 
 ## FAQ
 
-> To which external addresses does ActivationWs web service specifically need access to?
+**To which external addresses does ActivationWs web service specifically need access to?**
 
 ActivationWs web service requires access to `https://activation.sls.microsoft.com`
 
-> I'd like to evaluate ActivationWs, however I do not have access to the Extended Security MAK key yet. How can I evaluate ActivationWs beforehand?
+**I'd like to evaluate ActivationWs, however I do not have access to the Extended Security MAK key yet. How can I evaluate ActivationWs beforehand?**
 
 You can evaluate ActivationWs by using your Windows MAK key.
 
-> After successfully deploying the licenses using ActivationWs, how can I verify the deployment of the extended security updates?
+**After successfully deploying the licenses using ActivationWs, how can I verify the deployment of the extended security updates?**
 
 Please take a look at [this](https://techcommunity.microsoft.com/t5/Windows-IT-Pro-Blog/How-to-get-Extended-Security-Updates-for-eligible-Windows/ba-p/917807) blog article, which outlines the available updates to verify the deployment.
 
-> Activate-Product.ps1 fails with "[Error] Failed to install the product key."
+**Activate-Product.ps1 fails with "[Error] Failed to install the product key."**
 
 - Verify that you meet the ESU requiements, listed here: [How-to-get-Extended-Security-Updates](https://techcommunity.microsoft.com/t5/Windows-IT-Pro-Blog/How-to-get-Extended-Security-Updates-for-eligible-Windows/ba-p/917807)
 - Run the 'Activate-License.ps1' script as administrator
@@ -74,11 +68,11 @@ Please take a look at [this](https://techcommunity.microsoft.com/t5/Windows-IT-P
 
 If it fails even though you followed these steps, please run `slmgr.vbs /ipk <product key>` and check the result.
 
-> Activate-Product.ps1 fails with "[Error] Product activation failed (3221549105)."
+**Activate-Product.ps1 fails with "[Error] Product activation failed (3221549105)."**
 
 The field test results showed that this error occurs on devices that haven't been connected to the Internet for a while. Please deploy the [latest monthly rollup](https://www.catalog.update.microsoft.com/Search.aspx?q=2019-12%20Security%20Monthly%20Quality%20Rollup) to update the system components and finish up the activation.
 
-> I would love to use ActivationWs, but is it officialy supported by Microsoft?
+**I would love to use ActivationWs, but is it officialy supported by Microsoft?**
 
 Microsoft does not provide technical support for this solution. Please take a look at the official supported methods for activation, listed here: [How-to-get-Extended-Security-Updates](https://techcommunity.microsoft.com/t5/Windows-IT-Pro-Blog/How-to-get-Extended-Security-Updates-for-eligible-Windows/ba-p/917807)
 
