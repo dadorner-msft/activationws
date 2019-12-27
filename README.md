@@ -12,15 +12,15 @@
 
 ## Introduction
 
-Welcome to the ActivationWs GitHub repository! ActivationWs is a new alternative MAK key distribution and activation solution. It includes an ASP.NET web service and a PowerShell script to install and activate the Extended Security MAK key. 
+Welcome to the ActivationWs GitHub repository! ActivationWs is a Multiple Activation Key (MAK) distribution and activation solution. It includes an ASP.NET web service and a PowerShell script to install and activate the MAK. 
 
-ActivationWs was designed for organizations who are facing challenges in the deployment and activation of an Extended Security MAK key. It eliminates the pre-requisites that VAMT needs and reduces obstacles you could face in the product key activation process. ActivationWs provides you with a “pull-based” activation solution and can also be used to support you in offline-based scenarios, no calls to the Microsoft Licensing Activation Center are needed.
+ActivationWs was designed for organizations who are facing challenges in the deployment and activation of their Extended Security Update (ESU) MAK key. It eliminates the pre-requisites that VAMT needs and reduces obstacles you could face in the product key activation process. ActivationWs provides you with a “pull-based” activation solution and can also be used to support you in offline-based scenarios, no calls to the Microsoft Licensing Activation Center are needed.
 
 ### How does ActivationWs work and how does it benefit you?
 
 ![activation-process](https://github.com/dadorner-msft/ActivationWs/blob/master/doc/images/activation-process.png) 
  
-1. The PowerShell script 'Activate-Product.ps1' is deployed to the clients (e.g. using ConfigMgr)
+1. The PowerShell script 'Activate-Product.ps1' is deployed to the clients (e.g. using ConfigMgr or another solution of your choice)
 2. The script installs the MAK key, queries the Installation ID and Product ID and sends a SOAP request to the ActivationWs web service (e.g. over port 80/443)
 *the ActivationWs web service is installed on a host on your internal network and requires internet connectivity (direct or via proxy) Windows 7 clients do not need to be connected to the internet
 3. Installation- and Product IDs are sent to the Microsoft BatchActivation Service
@@ -75,6 +75,16 @@ The field test results showed that this error occurs on devices that haven't bee
 **I would love to use ActivationWs, but is it officialy supported by Microsoft?**
 
 Microsoft does not provide technical support for this solution. Please take a look at the official supported methods for activation, listed here: [How-to-get-Extended-Security-Updates](https://techcommunity.microsoft.com/t5/Windows-IT-Pro-Blog/How-to-get-Extended-Security-Updates-for-eligible-Windows/ba-p/917807)
+
+**We're using SCCM to deploy your script. Is there way to obfuscate or hide the ESU key in the logs?**
+
+You could create a collection variable that contains the MAK. Then modify the PowerShell script to not output the product key and create an instance of a COM object that represents the TS environment to read the variable, e.g.
+
+```powershell
+$tsEnv = New-Object -COMObject Microsoft.SMS.TSEnvironment
+$productKey = $tsEnv.Value("PKEY")
+```
+This would prevent the product key from showing up in the ConfigMgr log files.
 
 [Back to ToC](#table-of-contents)
 
