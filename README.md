@@ -20,9 +20,9 @@ ActivationWs was designed for organizations who are facing challenges in the dep
 
 ![activation-process](https://github.com/dadorner-msft/ActivationWs/blob/master/doc/images/activation-process.png) 
  
-1. The PowerShell script 'Activate-Product.ps1' is deployed to the clients (e.g. using ConfigMgr or another solution of your choice)
+1. Deploy the PowerShell script 'Activate-Product.ps1' to your ESU eligible devices (e.g. using ConfigMgr or another solution of your choice)
 2. The script installs the MAK key, queries the Installation ID and Product ID and sends a SOAP request to the ActivationWs web service (e.g. over port 80/443)
-*the ActivationWs web service is installed on a host on your internal network and requires internet connectivity (direct or via proxy) Windows 7 clients do not need to be connected to the internet
+*the ActivationWs web service is installed on a host on your internal network and requires internet connectivity (direct or via proxy)
 3. Installation- and Product IDs are sent to the Microsoft BatchActivation Service
 4. Confirmation ID is returned to the ActivationWs web service, which will then return the Confirmation ID to the client
 5. The script deposits the Confirmation ID and finishes up the activation
@@ -36,7 +36,7 @@ ActivationWs web service runs on IIS and requires the .NET Framework 4.6. It als
 
 ## Installation and Usage
 
-The latest preview of this solution can be downloaded from the [ActivationWs GitHub releases page](https://github.com/dadorner-msft/ActivationWs/releases). Click on `Assets` to show the files available in the release.
+The latest version of this solution can be downloaded from the [ActivationWs GitHub releases page](https://github.com/dadorner-msft/ActivationWs/releases). Click on `Assets` to show the files available in the release.
 
 1. Deploy the ActivationWs web service to IIS
 2. Verify that your devices meet the [ESU installation requirements](https://techcommunity.microsoft.com/t5/Windows-IT-Pro-Blog/How-to-get-Extended-Security-Updates-for-eligible-Windows/ba-p/917807)
@@ -70,7 +70,7 @@ If it fails even though you followed these steps, please run `slmgr.vbs /ipk <pr
 
 **Activate-Product.ps1 fails with "[Error] Product activation failed (3221549105)."**
 
-The field test results showed that this error occurs on devices that haven't been connected to the Internet for a while. Please deploy the [latest monthly rollup](https://www.catalog.update.microsoft.com/Search.aspx?q=2019-12%20Security%20Monthly%20Quality%20Rollup) to update the system components and finish up the activation.
+The field test results showed that this error occurs on devices that haven't been connected to the Internet for a while. Please deploy the [latest monthly rollup](https://www.catalog.update.microsoft.com/Search.aspx?q=2019-12%20Security%20Monthly%20Quality%20Rollup) to update the system components to finish up the activation.
 
 **I would love to use ActivationWs, but is it officialy supported by Microsoft?**
 
