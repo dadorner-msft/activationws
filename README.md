@@ -18,7 +18,7 @@ ActivationWs was designed for organizations who are facing challenges in the dep
 
 ### How does ActivationWs work and how does it benefit you?
 
-![activation-process](https://github.com/dadorner-msft/ActivationWs/blob/master/doc/images/activation-process.png) 
+![activation-process](https://github.com/dadorner-msft/ActivationWs/blob/master/doc/images/activation-process.gif) 
  
 1. Deploy the PowerShell script 'Activate-Product.ps1' to your ESU eligible devices (e.g. using ConfigMgr or another solution of your choice)
 2. The script installs the MAK key, queries the Installation ID and Product ID and sends a SOAP request to the ActivationWs web service (e.g. over port 80/443)
