@@ -14,7 +14,7 @@
 
 Welcome to the ActivationWs GitHub repository! ActivationWs is a Multiple Activation Key (MAK) distribution and activation solution. It includes an ASP.NET web service and a PowerShell script to install and activate the MAK. 
 
-ActivationWs was designed for organizations who are facing challenges in the deployment and activation of their Extended Security Update (ESU) MAK key. It eliminates the pre-requisites that VAMT needs and reduces obstacles you could face in the product key activation process. ActivationWs provides you with a “pull-based” activation solution and can also be used to support you in offline-based scenarios, no calls to the Microsoft Licensing Activation Center are needed.
+ActivationWs was designed for organizations who are facing challenges in the deployment and activation of their Extended Security Update (ESU) MAK key. It provides you with a “pull-based” activation solution, eliminates the pre-requisites that VAMT needs and reduces obstacles you could face in the product key activation process.
 
 ### How does ActivationWs work and how does it benefit you?
 
