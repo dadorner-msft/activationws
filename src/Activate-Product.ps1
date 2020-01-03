@@ -1,24 +1,24 @@
 <#
 ========================================================================
 	File:		Activate-Product.ps1
-	Version:	0.15.2
+	Version:	0.15.3
 	Author:		Daniel Dorner
-	Date:		12/15/2019
+	Date:		01/03/2020
 	
 	Purpose:	Installs and activates a product key
 	
 	Usage:		./Activate-Product.ps1 <Required Parameter> [Optional Parameter]
 				
-                <-ProductKey>          <Specifies the product key>
-                <-WebServiceUrl>       <Specifies the URL to the ActivationWs web service>
-                [-LogFile]             [Specifies the full path to the log file]
-                [-MaximumRetryCount]   [Specifies the number of connection retries if the ActivationWs web service cannot be contacted]
-                [-RetryIntervalSec]    [Specifies the interval in seconds between retries for the connection when a failure is received]
+				<-ProductKey>          <Specifies the product key>
+				<-WebServiceUrl>       <Specifies the URL to the ActivationWs web service>
+				[-LogFile]             [Specifies the full path to the log file]
+				[-MaximumRetryCount]   [Specifies the number of connection retries if the ActivationWs web service cannot be contacted]
+				[-RetryIntervalSec]    [Specifies the interval in seconds between retries for the connection when a failure is received]
 
-	This script code is provided as is with no guarantee or waranty concerning
+	This script code is provided "as is", with no guarantee or warranty concerning
 	the usability or impact on systems and may be used, distributed, and
 	modified in any way provided the parties agree and acknowledge the 
-	Microsoft or Microsoft Partners have neither accountabilty or 
+	Microsoft or Microsoft Partners have neither accountability or 
 	responsibility for results produced by use of this script.
 	
 	Microsoft will not provide any support through any means.
@@ -194,7 +194,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 	
 		# Install the product key.
 		LogAndConsole "Installing product key $ProductKey ..."
-		$licensingService = Get-WmiObject -Query 'SELECT * FROM SoftwareLicensingService'
+		$licensingService = Get-WmiObject -Query 'SELECT VERSION FROM SoftwareLicensingService'
 		$licensingService.InstallProductKey($ProductKey) | Out-Null
 		$licensingService.RefreshLicenseStatus() | Out-Null
 
@@ -255,7 +255,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 }
 
 function Main {
-	$scriptVersion = "0.15.2"
+	$scriptVersion = "0.15.3"
 	LogAndConsole ""
 	InstallAndActivateProductKey($ProductKey)
 }
