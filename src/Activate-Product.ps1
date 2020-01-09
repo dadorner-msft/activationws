@@ -1,20 +1,20 @@
 <#
 ========================================================================
 	File:		Activate-Product.ps1
-	Version:	0.15.3
+	Version:	0.15.4
 	Author:		Daniel Dorner
-	Date:		01/03/2020
+	Date:		01/09/2020
 	
 	Purpose:	Installs and activates a product key
 	
 	Usage:		./Activate-Product.ps1 <Required Parameter> [Optional Parameter]
-				
-				<-ProductKey>          <Specifies the product key>
-				<-WebServiceUrl>       <Specifies the URL to the ActivationWs web service>
-				[-LogFile]             [Specifies the full path to the log file]
-				[-MaximumRetryCount]   [Specifies the number of connection retries if the ActivationWs web service cannot be contacted]
-				[-RetryIntervalSec]    [Specifies the interval in seconds between retries for the connection when a failure is received]
-
+	
+                <-ProductKey>          <Specifies the product key>
+                <-WebServiceUrl>       <Specifies the URL to the ActivationWs web service>
+                [-LogFile]             [Specifies the full path to the log file]
+                [-MaximumRetryCount]   [Specifies the number of connection retries if the ActivationWs web service cannot be contacted]
+                [-RetryIntervalSec]    [Specifies the interval in seconds between retries for the connection when a failure is received]
+	
 	This script code is provided "as is", with no guarantee or warranty concerning
 	the usability or impact on systems and may be used, distributed, and
 	modified in any way provided the parties agree and acknowledge the 
@@ -242,7 +242,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 		$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus, LicenseStatusReason FROM SoftwareLicensingProduct where PartialProductKey = "{0}"' -f $partialProductKey)
 		
 		if (!$licensingProduct.LicenseStatus -eq 1) {
-			LogAndConsole "[Error] Product activation failed ($licensingProduct.LicenseStatusReason)."
+			LogAndConsole "[Error] Product activation failed ($($licensingProduct.LicenseStatusReason))."
 			Exit $MyInvocation.ScriptLineNumber
 		}
 		
@@ -255,7 +255,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 }
 
 function Main {
-	$scriptVersion = "0.15.3"
+	$scriptVersion = "0.15.4"
 	LogAndConsole ""
 	InstallAndActivateProductKey($ProductKey)
 }
