@@ -1,9 +1,9 @@
 <#
 ========================================================================
 	File:		Activate-Product.ps1
-	Version:	0.15.4
+	Version:	0.15.5
 	Author:		Daniel Dorner
-	Date:		01/09/2020
+	Date:		01/13/2020
 	
 	Purpose:	Installs and activates a product key
 	
@@ -138,7 +138,6 @@ $soapEnvelopeDocument = [xml]@"
 				$soapEnvelopeDocument.Save($requestStream) 
 				$requestStream.Close()
 				$response = $webRequest.GetResponse()
-				$requestSucceeded = $true
 				
 				LogAndConsole "Response status: $([int]$response.StatusCode) - $($response.StatusCode)"
 				
@@ -154,6 +153,7 @@ $soapEnvelopeDocument = [xml]@"
 				LogAndConsole "[Error] Number of maximum connection retries reached. The execution of this script will be stopped."
 				Exit $MyInvocation.ScriptLineNumber
 			}
+			
 		} catch [System.Net.WebException] {
 			# The ActivationWs web service could not be contacted. Reasons include:
 			# The remote host could not be resolved; Unable to connect to the remote host; HTTP errors.
@@ -165,8 +165,8 @@ $soapEnvelopeDocument = [xml]@"
 				LogAndConsole "Connection to web service will be retried in $RetryIntervalSec seconds ($numberOfRetries/$MaximumRetryCount)..."
 				# Suspend the activity before the connection is retried.
 				Start-Sleep $RetryIntervalSec
-				
 			}
+			
 		} catch {
 			$exMessage = $_.Exception.Message
 			LogAndConsole "[Error] Exception calling 'CallWebService': $exMessage"
@@ -255,7 +255,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 }
 
 function Main {
-	$scriptVersion = "0.15.4"
+	$scriptVersion = "0.15.5"
 	LogAndConsole ""
 	InstallAndActivateProductKey($ProductKey)
 }
