@@ -75,9 +75,9 @@ The field test results showed that this error occurs on devices that haven't bee
 **Activate-Product.ps1 fails with "[Warning] The remote server returned an error: (500) Internal Server Error.**
 
 This is a "server-side" error, meaning that the ActivationWs web service couldn't acquire the Confirmation Id. Reasons include:
-- The ActivationWs web service can connect to the Microsoft BatchActivation Service
+- The ActivationWs web service couldn't connect to the Microsoft BatchActivation Service
 - No MAK activations are left on your product key
-- The specified -webServiceUrl parameter is incorrect
+- The specified WebServiceUrl is incorrect
 
 **I would love to use ActivationWs, but is it officialy supported by Microsoft?**
 
