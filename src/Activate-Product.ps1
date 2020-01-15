@@ -1,19 +1,47 @@
 <#
-========================================================================
-	File:		Activate-Product.ps1
-	Version:	0.15.5
-	Author:		Daniel Dorner
-	Date:		01/13/2020
+.SYNOPSIS
+    Installs and activates a product key
 	
-	Purpose:	Installs and activates a product key
+.DESCRIPTION
+    This script can be used to install and activate a Multiple Activation Key (MAK)
 	
-	Usage:		./Activate-Product.ps1 <Required Parameter> [Optional Parameter]
+.PARAMETER ProductKey
+    Specifies the product key>
 	
-                <-ProductKey>          <Specifies the product key>
-                <-WebServiceUrl>       <Specifies the URL to the ActivationWs web service>
-                [-LogFile]             [Specifies the full path to the log file]
-                [-MaximumRetryCount]   [Specifies the number of connection retries if the ActivationWs web service cannot be contacted]
-                [-RetryIntervalSec]    [Specifies the interval in seconds between retries for the connection when a failure is received]
+.PARAMETER WebServiceUrl
+    Specifies the URL to the ActivationWs web service
+	
+.PARAMETER LogFile
+    Specifies the full path to the log file
+	
+.PARAMETER MaximumRetryCount
+    Specifies the number of connection retries if the ActivationWs web service cannot be contacted
+	
+.PARAMETER RetryIntervalSec
+    Specifies the interval in seconds between retries for the connection when a failure is received
+
+.EXAMPLE
+    ./Activate-Product.ps1 -ProductKey 11111-11111-11111-11111-11111 -WebServiceUrl http://client1:8081/activationws.asmx -LogFile C:\logs\activation.log -MaximumRetryCount 5 -RetryIntervalSec 40
+	
+    Exit Codes:  0   Success
+                 1   Unknown error
+                 10  Failed to install the product key
+                 11  No license information for product key was found
+                 12  Failed to retrieve the license information
+                 13  Product activation failed
+                 14  Failed to deposit Confirmation ID
+                 20  Number of maximum connection retries reached
+                 21  Exception calling 'CallWebService'
+                 30  Exception calling 'LogAndConsole'
+				 
+.LINK
+    https://github.com/dadorner-msft/activationws
+	
+.NOTES
+    Filename:    Activate-Product.ps1
+    Version:     0.15.5
+    Author:      Daniel Dorner
+    Date:        01/15/2020
 	
 	This script code is provided "as is", with no guarantee or warranty concerning
 	the usability or impact on systems and may be used, distributed, and
@@ -22,9 +50,9 @@
 	responsibility for results produced by use of this script.
 	
 	Microsoft will not provide any support through any means.
-
-========================================================================
+	
 #>
+
 
 param (
 	[Parameter(
@@ -72,7 +100,7 @@ function LogAndConsole($Message)
 {
 	try {
 		if (!$logInitialized) {
-			"{0}; <---- Starting {1} on host {2}  ---->" -f (Get-Date), $MyInvocation.ScriptName, $env:COMPUTERNAME | Out-File -FilePath $LogFile -Append -Force
+			"{0}; <---- Starting {1} on host {2}  ---->" -f (Get-Date), $MyInvocation.ScriptName, $fullQualifiedHostName | Out-File -FilePath $LogFile -Append -Force
 			"{0}; {1} version: {2}" -f (Get-Date), $script:MyInvocation.MyCommand.Name, $scriptVersion | Out-File -FilePath $LogFile -Append -Force
 			"{0}; Initialized logging at {1}" -f (Get-Date), $LogFile | Out-File -FilePath $LogFile -Append -Force
 			
@@ -96,7 +124,7 @@ function LogAndConsole($Message)
 		
 	} catch {
 		Write-Host  "[Error] Exception calling 'LogAndConsole':" $_.Exception.Message
-		Exit $MyInvocation.ScriptLineNumber
+		Exit 30
 	}
 }
 
@@ -130,19 +158,20 @@ $soapEnvelopeDocument = [xml]@"
 				$webRequest = [System.Net.WebRequest]::Create($WebServiceUrl) 
 				$webRequest.Headers.Add("SOAPAction","`"http://tempuri.org/AcquireConfirmationId`"")
 				
-				$webRequest.ContentType = "text/xml;charset=`"utf-8`"" 
-				$webRequest.Accept      = "text/xml" 
-				$webRequest.Method      = "POST" 
+				$webRequest.ContentType = "text/xml;charset=`"utf-8`""
+				$webRequest.Accept      = "text/xml"
+				$webRequest.Method      = "POST"
+				$webRequest.UserAgent   = "PowerShell/{0} ({1}) {2}/{3}" -f $PSVersionTable.PSVersion, $fullQualifiedHostName, $script:MyInvocation.MyCommand.Name, $scriptVersion
 				
-				$requestStream = $webRequest.GetRequestStream() 
-				$soapEnvelopeDocument.Save($requestStream) 
+				$requestStream = $webRequest.GetRequestStream()
+				$soapEnvelopeDocument.Save($requestStream)
 				$requestStream.Close()
 				$response = $webRequest.GetResponse()
 				
 				LogAndConsole "Response status: $([int]$response.StatusCode) - $($response.StatusCode)"
 				
-				$responseStream = $response.GetResponseStream() 
-				$soapReader = [System.IO.StreamReader]($responseStream) 
+				$responseStream = $response.GetResponseStream()
+				$soapReader = [System.IO.StreamReader]($responseStream)
 				$responseXml = [xml]$soapReader.ReadToEnd()
 				$responseStream.Close()
 				
@@ -151,7 +180,7 @@ $soapEnvelopeDocument = [xml]@"
 			} else {
 				# The maximum number of connection retries was reached. Stop the script execution.
 				LogAndConsole "[Error] Number of maximum connection retries reached. The execution of this script will be stopped."
-				Exit $MyInvocation.ScriptLineNumber
+				Exit 20
 			}
 			
 		} catch [System.Net.WebException] {
@@ -170,7 +199,7 @@ $soapEnvelopeDocument = [xml]@"
 		} catch {
 			$exMessage = $_.Exception.Message
 			LogAndConsole "[Error] Exception calling 'CallWebService': $exMessage"
-			Exit $MyInvocation.ScriptLineNumber
+			Exit 21
 		}
 	}
 
@@ -189,7 +218,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 		
 		if ($licensingProduct.LicenseStatus -eq 1) {
 			LogAndConsole "The product is already activated."
-			Exit $MyInvocation.ScriptLineNumber
+			Exit 0
 		}
 	
 		# Install the product key.
@@ -200,7 +229,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 
 	} catch {
 		LogAndConsole "[Error] Failed to install the product key."
-		Exit $MyInvocation.ScriptLineNumber
+		Exit 10
 	}
 
 	try {
@@ -210,7 +239,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 
 		if(!$licensingProduct) {
 			LogAndConsole "No license information for product key $ProductKey was found."
-			Exit $MyInvocation.ScriptLineNumber
+			Exit 11
 		}
 		
 		$licenseName = $licensingProduct.Name                       # Name  
@@ -225,7 +254,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 		
 	} catch {
 		LogAndConsole "[Error] Failed to retrieve the license information."
-		Exit $MyInvocation.ScriptLineNumber
+		Exit 12
 	}
 
 	# Retrieve the Confirmation ID.
@@ -243,19 +272,20 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 		
 		if (!$licensingProduct.LicenseStatus -eq 1) {
 			LogAndConsole "[Error] Product activation failed ($($licensingProduct.LicenseStatusReason))."
-			Exit $MyInvocation.ScriptLineNumber
+			Exit 13
 		}
 		
 		LogAndConsole "Product activated successfully."
 		
 	} catch {
 		LogAndConsole "[Error] Failed to deposit the Confirmation ID. The product was not activated."
-		Exit $MyInvocation.ScriptLineNumber
+		Exit 14
 	}
 }
 
 function Main {
 	$scriptVersion = "0.15.5"
+	$fullQualifiedHostName = [System.Net.Dns]::GetHostByName($env:COMPUTERNAME).HostName
 	LogAndConsole ""
 	InstallAndActivateProductKey($ProductKey)
 }
