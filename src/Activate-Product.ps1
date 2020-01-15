@@ -6,7 +6,7 @@
     This script can be used to install and activate a Multiple Activation Key (MAK)
 	
 .PARAMETER ProductKey
-    Specifies the product key>
+    Specifies the product key
 	
 .PARAMETER WebServiceUrl
     Specifies the URL to the ActivationWs web service
@@ -21,7 +21,7 @@
     Specifies the interval in seconds between retries for the connection when a failure is received
 
 .EXAMPLE
-    ./Activate-Product.ps1 -ProductKey 11111-11111-11111-11111-11111 -WebServiceUrl http://client1:8081/activationws.asmx -LogFile C:\logs\activation.log -MaximumRetryCount 5 -RetryIntervalSec 40
+    ./Activate-Product.ps1 -ProductKey XXXXX-XXXXX-XXXXX-XXXXX-XXXXX -WebServiceUrl http://client1:8081/activationws.asmx -LogFile C:\logs\activation.log -MaximumRetryCount 5 -RetryIntervalSec 40
 	
     Exit Codes:  0   Success
                  1   Unknown error
@@ -43,13 +43,13 @@
     Author:      Daniel Dorner
     Date:        01/15/2020
 	
-	This script code is provided "as is", with no guarantee or warranty concerning
-	the usability or impact on systems and may be used, distributed, and
-	modified in any way provided the parties agree and acknowledge the 
-	Microsoft or Microsoft Partners have neither accountability or 
-	responsibility for results produced by use of this script.
+    This script code is provided "as is", with no guarantee or warranty concerning
+    the usability or impact on systems and may be used, distributed, and
+    modified in any way provided the parties agree and acknowledge the 
+    Microsoft or Microsoft Partners have neither accountability or 
+    responsibility for results produced by use of this script.
 	
-	Microsoft will not provide any support through any means.
+    Microsoft will not provide any support through any means.
 	
 #>
 
@@ -100,7 +100,7 @@ function LogAndConsole($Message)
 {
 	try {
 		if (!$logInitialized) {
-			"{0}; <---- Starting {1} on host {2}  ---->" -f (Get-Date), $MyInvocation.ScriptName, $fullQualifiedHostName | Out-File -FilePath $LogFile -Append -Force
+			"{0}; <---- Starting {1} on host {2}  ---->" -f (Get-Date), $MyInvocation.ScriptName, $fullyQualifiedHostName | Out-File -FilePath $LogFile -Append -Force
 			"{0}; {1} version: {2}" -f (Get-Date), $script:MyInvocation.MyCommand.Name, $scriptVersion | Out-File -FilePath $LogFile -Append -Force
 			"{0}; Initialized logging at {1}" -f (Get-Date), $LogFile | Out-File -FilePath $LogFile -Append -Force
 			
@@ -116,11 +116,19 @@ function LogAndConsole($Message)
 		
 	} catch [System.IO.DirectoryNotFoundException] {
 		$script:LogFile = "$env:TEMP\Activate-Product.log"
-		Write-Host "[Warning] Could not find a part of the path $LogFile. The output would be redirected to $LogFile." 
+		Write-Host "[Warning] $_ The output would be redirected to `'$LogFile`'."
 		
 	} catch [System.UnauthorizedAccessException] {
 		$script:LogFile = "$env:TEMP\Activate-Product.log"
-		Write-Host "[Warning] Access to the path $LogFile is denied. The output would be redirected to $LogFile."
+		Write-Host "[Warning] $_ The output would be redirected to `'$LogFile`'."
+		
+	} catch [System.IO.IOException] {
+		$script:LogFile = "$env:TEMP\Activate-Product.log"
+		Write-Host "[Warning] The network path was not found. The output would be redirected to `'$LogFile`'."
+		
+	} catch [System.Management.Automation.DriveNotFoundException] {
+		$script:LogFile = "$env:TEMP\Activate-Product.log"
+		Write-Host "[Warning] $_ The output would be redirected to `'$LogFile`'."
 		
 	} catch {
 		Write-Host  "[Error] Exception calling 'LogAndConsole':" $_.Exception.Message
@@ -161,7 +169,7 @@ $soapEnvelopeDocument = [xml]@"
 				$webRequest.ContentType = "text/xml;charset=`"utf-8`""
 				$webRequest.Accept      = "text/xml"
 				$webRequest.Method      = "POST"
-				$webRequest.UserAgent   = "PowerShell/{0} ({1}) {2}/{3}" -f $PSVersionTable.PSVersion, $fullQualifiedHostName, $script:MyInvocation.MyCommand.Name, $scriptVersion
+				$webRequest.UserAgent   = "PowerShell/{0} ({1}) {2}/{3}" -f $PSVersionTable.PSVersion, $fullyQualifiedHostName, $script:MyInvocation.MyCommand.Name, $scriptVersion
 				
 				$requestStream = $webRequest.GetRequestStream()
 				$soapEnvelopeDocument.Save($requestStream)
@@ -285,7 +293,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 
 function Main {
 	$scriptVersion = "0.15.5"
-	$fullQualifiedHostName = [System.Net.Dns]::GetHostByName($env:COMPUTERNAME).HostName
+	$fullyQualifiedHostName = [System.Net.Dns]::GetHostByName($env:COMPUTERNAME).HostName
 	LogAndConsole ""
 	InstallAndActivateProductKey($ProductKey)
 }
