@@ -39,9 +39,9 @@
 	
 .NOTES
     Filename:    Activate-Product.ps1
-    Version:     0.15.5
+    Version:     0.16.0
     Author:      Daniel Dorner
-    Date:        01/15/2020
+    Date:        01/16/2020
 	
     This script code is provided "as is", with no guarantee or warranty concerning
     the usability or impact on systems and may be used, distributed, and
@@ -124,7 +124,7 @@ function LogAndConsole($Message)
 		
 	} catch [System.IO.IOException] {
 		$script:LogFile = "$env:TEMP\Activate-Product.log"
-		Write-Host "[Warning] The network path was not found. The output would be redirected to `'$LogFile`'."
+		Write-Host "[Warning] $_ The output would be redirected to `'$LogFile`'."
 		
 	} catch [System.Management.Automation.DriveNotFoundException] {
 		$script:LogFile = "$env:TEMP\Activate-Product.log"
@@ -164,10 +164,9 @@ $soapEnvelopeDocument = [xml]@"
 		try {
 			if ($numberOfRetries -le $MaximumRetryCount) {
 				$webRequest = [System.Net.WebRequest]::Create($WebServiceUrl) 
-				$webRequest.Headers.Add("SOAPAction","`"http://tempuri.org/AcquireConfirmationId`"")
-				
-				$webRequest.ContentType = "text/xml;charset=`"utf-8`""
 				$webRequest.Accept      = "text/xml"
+				$webRequest.ContentType = "text/xml;charset=`"utf-8`""				
+				$webRequest.Headers.Add("SOAPAction","`"http://tempuri.org/AcquireConfirmationId`"")
 				$webRequest.Method      = "POST"
 				$webRequest.UserAgent   = "PowerShell/{0} ({1}) {2}/{3}" -f $PSVersionTable.PSVersion, $fullyQualifiedHostName, $script:MyInvocation.MyCommand.Name, $scriptVersion
 				
@@ -222,7 +221,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 	try {
 		# Check if product key is already installed and activated.
 		$partialProductKey = $ProductKey.Substring($ProductKey.Length - 5)
-		$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus FROM SoftwareLicensingProduct where PartialProductKey = "{0}"' -f $partialProductKey)
+		$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
 		
 		if ($licensingProduct.LicenseStatus -eq 1) {
 			LogAndConsole "The product is already activated."
@@ -231,7 +230,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 	
 		# Install the product key.
 		LogAndConsole "Installing product key $ProductKey ..."
-		$licensingService = Get-WmiObject -Query 'SELECT VERSION FROM SoftwareLicensingService'
+		$licensingService = Get-WmiObject -Query 'SELECT Version FROM SoftwareLicensingService'
 		$licensingService.InstallProductKey($ProductKey) | Out-Null
 		$licensingService.RefreshLicenseStatus() | Out-Null
 
@@ -243,7 +242,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 	try {
 		# Get the licensing information.
 		LogAndConsole "Retrieving license information..."
-		$licensingProduct = Get-WmiObject -Query ('SELECT ID, Name, OfflineInstallationId, ProductKeyID FROM SoftwareLicensingProduct where PartialProductKey = "{0}"' -f $partialProductKey)
+		$licensingProduct = Get-WmiObject -Query ('SELECT ID, Name, OfflineInstallationId, ProductKeyID FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
 
 		if(!$licensingProduct) {
 			LogAndConsole "No license information for product key $ProductKey was found."
@@ -276,7 +275,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 		$licensingService.RefreshLicenseStatus() | Out-Null
 		
 		# Check if the activation was successful.
-		$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus, LicenseStatusReason FROM SoftwareLicensingProduct where PartialProductKey = "{0}"' -f $partialProductKey)
+		$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus, LicenseStatusReason FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
 		
 		if (!$licensingProduct.LicenseStatus -eq 1) {
 			LogAndConsole "[Error] Product activation failed ($($licensingProduct.LicenseStatusReason))."
@@ -292,7 +291,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 }
 
 function Main {
-	$scriptVersion = "0.15.5"
+	$scriptVersion = "0.16.0"
 	$fullyQualifiedHostName = [System.Net.Dns]::GetHostByName($env:COMPUTERNAME).HostName
 	LogAndConsole ""
 	InstallAndActivateProductKey($ProductKey)
