@@ -39,17 +39,15 @@
 	
 .NOTES
     Filename:    Activate-Product.ps1
-    Version:     0.16.0
+    Version:     0.16.1
     Author:      Daniel Dorner
-    Date:        01/16/2020
+    Date:        01/19/2020
 	
     This script code is provided "as is", with no guarantee or warranty concerning
     the usability or impact on systems and may be used, distributed, and
     modified in any way provided the parties agree and acknowledge the 
     Microsoft or Microsoft Partners have neither accountability or 
     responsibility for results produced by use of this script.
-	
-    Microsoft will not provide any support through any means.
 	
 #>
 
@@ -68,7 +66,7 @@ param (
 		ValueFromPipeline = $true,
 		HelpMessage = 'Specifies the URL to the ActivationWs web service, e.g. "https://server.domain.name/ActivationWs.asmx"',
 	    Position = 1)]
-	[ValidateNotNullorEmpty()]
+	[ValidateNotNullOrEmpty()]
 	[string]$WebServiceUrl,
 
 	[Parameter(
@@ -76,7 +74,7 @@ param (
 		ValueFromPipeline = $true,
 		HelpMessage = 'Specifies the full path to the log file, e.g. "C:\Log\Logfile.log"',
 		Position = 2)]
-	[ValidateNotNullorEmpty()]
+	[ValidateNotNullOrEmpty()]
 	[string]$LogFile = "$env:TEMP\Activate-Product.log",
 	
 	[Parameter(
@@ -84,16 +82,16 @@ param (
 		ValueFromPipeline = $true,
 		HelpMessage = 'Specifies the number of connection retries if the ActivationWs web service cannot be contacted, e.g. "5"',
 		Position = 3)]
-	[ValidateNotNullorEmpty()]
-	[int]$MaximumRetryCount = 3,
+	[ValidateNotNullOrEmpty()]
+	[uint16]$MaximumRetryCount = 3,
 	
 	[Parameter(
 		Mandatory = $false,
 		ValueFromPipeline = $true,
 		HelpMessage = 'Specifies the interval in seconds between retries for the connection when a failure is received, e.g. "30"',
 		Position = 4)]
-	[ValidateNotNullorEmpty()]
-	[int]$RetryIntervalSec = 30
+	[ValidateNotNullOrEmpty()]
+	[uint16]$RetryIntervalSec = 30
 )
 
 function LogAndConsole($Message)
@@ -158,7 +156,7 @@ $soapEnvelopeDocument = [xml]@"
 "@
 	
 	[bool]$requestSucceeded = $false
-	[int]$numberOfRetries = 0
+	[uint16]$numberOfRetries = 0
 	# Connect to the ActivationWs web service.
 	while (-not $requestSucceeded) {
 		try {
@@ -244,7 +242,7 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 		LogAndConsole "Retrieving license information..."
 		$licensingProduct = Get-WmiObject -Query ('SELECT ID, Name, OfflineInstallationId, ProductKeyID FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
 
-		if(!$licensingProduct) {
+		if (!$licensingProduct) {
 			LogAndConsole "No license information for product key $ProductKey was found."
 			Exit 11
 		}
@@ -291,9 +289,12 @@ function InstallAndActivateProductKey([string]$ProductKey) {
 }
 
 function Main {
-	$scriptVersion = "0.16.0"
+	$scriptVersion = "0.16.1"
 	$fullyQualifiedHostName = [System.Net.Dns]::GetHostByName($env:COMPUTERNAME).HostName
+	
+	# Initialize logging
 	LogAndConsole ""
+	
 	InstallAndActivateProductKey($ProductKey)
 }
 
