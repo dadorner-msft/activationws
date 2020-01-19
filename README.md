@@ -20,10 +20,10 @@ ActivationWs was designed for organizations who are facing challenges in the dep
 
 ![activation-process](https://github.com/dadorner-msft/ActivationWs/blob/master/doc/images/activation-process.gif) 
  
-1. Deploy the PowerShell script `Activate-Product.ps1` to your ESU eligible devices (e.g. using ConfigMgr or another solution of your choice)
-2. The script installs the MAK key, queries the Installation ID and Product ID. It then sends a SOAP request to the ActivationWs web service (the ActivationWs web service is installed on a host on your internal network. Communication takes place over a port of your choice, e.g. 80/443)
+1. The PowerShell script `Activate-Product.ps1` is deployed to your ESU eligible devices (e.g. using ConfigMgr or another solution of your choice)
+2. The script installs the MAK, queries the Installation- and Product ID. It then sends a SOAP request to the ActivationWs web service (the ActivationWs web service is installed on a host on your internal network. Communication takes place over a port of your choice, e.g. 80/443)
 3. Installation- and Product IDs are sent to the Microsoft BatchActivation Service
-4. Confirmation ID is returned to the ActivationWs web service, which will then return the Confirmation ID to the client
+4. Confirmation ID is returned to the ActivationWs web service, which will then return the Confirmation ID to the ESU eligible device
 5. The script deposits the Confirmation ID and finishes up the activation
 
 [Back to ToC](#table-of-contents)
@@ -39,8 +39,8 @@ ActivationWs was designed for organizations who are facing challenges in the dep
 The latest version of this solution can be downloaded from the [ActivationWs GitHub releases page](https://github.com/dadorner-msft/ActivationWs/releases). Click on `Assets` to show the files available in the release.
 
 1. Deploy the ActivationWs web service to IIS
-2. Verify that your devices meet the [ESU installation requirements](https://techcommunity.microsoft.com/t5/Windows-IT-Pro-Blog/How-to-get-Extended-Security-Updates-for-eligible-Windows/ba-p/917807)
-3. Run the PowerShell script `Activate-Product.ps1` on your clients to install and activate the license
+2. Verify that the **latest** [Security Monthly Quality Rollup](https://www.catalog.update.microsoft.com/Search.aspx?q=2020-01%20Security%20Monthly%20Quality%20Rollup) is installed on your ESU eligible devices
+3. Deploy the PowerShell script `Activate-Product.ps1` to the ESU eligible devices to install and activate the license
 
 ![Activate-License](https://github.com/dadorner-msft/activationws/blob/master/doc/images/Activate-License-v0.15.2.gif)
 
@@ -52,7 +52,7 @@ The latest version of this solution can be downloaded from the [ActivationWs Git
 
 ActivationWs web service requires access to `https://activation.sls.microsoft.com`
 
-**I'd like to evaluate ActivationWs, however I do not have access to the Extended Security MAK key yet. How can I evaluate ActivationWs beforehand?**
+**I'd like to evaluate ActivationWs, but I do not have access to the Extended Security MAK key yet. How can I evaluate ActivationWs beforehand?**
 
 You can evaluate ActivationWs by using your Windows MAK key.
 
@@ -81,7 +81,7 @@ This is a "server-side" error, meaning that the ActivationWs web service couldn'
 
 **I would love to use ActivationWs, but is it officialy supported by Microsoft?**
 
-Microsoft does not provide technical support for this solution. Please take a look at the [official supported methods](https://techcommunity.microsoft.com/t5/Windows-IT-Pro-Blog/How-to-get-Extended-Security-Updates-for-eligible-Windows/ba-p/917807) for activation.
+Microsoft Support and the ESU Team do not provide technical support for this solution. Please take a look at the [official supported methods](https://techcommunity.microsoft.com/t5/Windows-IT-Pro-Blog/How-to-get-Extended-Security-Updates-for-eligible-Windows/ba-p/917807) for activation.
 
 **We're using SCCM to deploy your script. Is there way to obfuscate or hide the ESU key in the logs?**
 
@@ -119,7 +119,5 @@ This project has adopted the [Microsoft Open Source Code of Conduct][conduct-cod
 ## Disclaimer
 
 This script code is provided "as is", with no guarantee or warranty concerning the usability or impact on systems and may be used, distributed, and modified in any way provided the parties agree and acknowledge the Microsoft or Microsoft Partners have neither accountability or responsibility for results produced by use of this script.
-
-Microsoft will not provide any support through any means.
 
 [Back to ToC](#table-of-contents)
