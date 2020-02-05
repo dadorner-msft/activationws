@@ -10,10 +10,9 @@ using System.Xml;
 
 namespace ActivationWs
 {
-    public class Activation
-    {
-        // Key for HMAC/SHA256 signature
-        private static readonly byte[] macKey = new byte[64] {
+    public static class ActivationHelper {
+        // Key for HMAC/SHA256 signature.
+        private static readonly byte[] MacKey = new byte[64] {
             254,  49, 152, 117, 251,  72, 132, 134,
             156, 243, 241, 206, 153, 168, 144, 100,
             171,  87,  31, 202,  71,   4,  80,  88,
@@ -24,126 +23,121 @@ namespace ActivationWs
             0,     0,   0,   0,   0,   0,   0,   0
         };
 
+        private const string Action = "http://www.microsoft.com/BatchActivationService/BatchActivate";
+        private static readonly Uri Uri = new Uri("https://activation.sls.microsoft.com/BatchActivation/BatchActivation.asmx");
+
         public static string CallWebService(string installationId, string extendedProductId) {
-            string url = "https://activation.sls.microsoft.com/BatchActivation/BatchActivation.asmx";
-            string action = "http://www.microsoft.com/BatchActivationService/BatchActivate";
-
-            XmlDocument soapEnvelopeXml = CreateSoapEnvelope(installationId, extendedProductId);
-            HttpWebRequest webRequest = CreateWebRequest(url, action);
-            InsertSoapEnvelopeIntoWebRequest(soapEnvelopeXml, webRequest);
-
-            // Issue the async request
-            IAsyncResult asyncResult = webRequest.BeginGetResponse(null, null);
-
-            // Wait until after the callback is called
-            asyncResult.AsyncWaitHandle.WaitOne();
-
-            // Read data from the response stream
-            string soapResult;
+            XmlDocument soapRequest = CreateSoapRequest(installationId, extendedProductId);
+            HttpWebRequest webRequest = CreateWebRequest(soapRequest);
+            XmlDocument soapResponse = new XmlDocument();
 
             try {
+                IAsyncResult asyncResult = webRequest.BeginGetResponse(null, null);
+                asyncResult.AsyncWaitHandle.WaitOne();
+
+                // Read data from the response stream.
                 using (WebResponse webResponse = webRequest.EndGetResponse(asyncResult))
                 using (StreamReader streamReader = new StreamReader(webResponse.GetResponseStream())) {
-                    soapResult = streamReader.ReadToEnd();
+                    soapResponse.LoadXml(streamReader.ReadToEnd());
                 }
 
             } catch (Exception ex) {
                 throw new Exception("Exception calling 'CallWebservice': " + ex.Message);
             }
 
-            return ParseSoapResult(soapResult);
+            return ParseSoapResponse(soapResponse);
         }
 
-        public static string ParseSoapResult(string soapResult) {
+        private static XmlDocument CreateSoapRequest(string installationId, string extendedProductId) {
+            // Create an activation request string.
+            string activationRequest =
+                "<ActivationRequest xmlns =\"http://www.microsoft.com/DRM/SL/BatchActivationRequest/1.0\">" +
+                    "<VersionNumber>2.0</VersionNumber>" +
+                    "<RequestType>1</RequestType>" +
+                    "<Requests>" +
+                        "<Request>" +
+                            "<PID>" + extendedProductId + "</PID>" +
+                            "<IID>" + installationId + "</IID>" +
+                        "</Request>" +
+                    "</Requests>" +
+                "</ActivationRequest>";
 
-            // Parse the response stream
-            try {
-                string cid;
-                XmlReader xmlReader;
-
-                using (xmlReader = XmlReader.Create(new StringReader(soapResult))) {
-                    xmlReader.ReadToFollowing("ResponseXml");
-                    string responseXml = xmlReader.ReadElementContentAsString();
-
-                    responseXml = responseXml.Replace("utf-16", "utf-8");
-                    responseXml = responseXml.Replace("&lt;", "<");
-                    responseXml = responseXml.Replace("&gt;", ">");
-
-                    using (xmlReader = XmlReader.Create(new StringReader(responseXml))) {
-                        xmlReader.ReadToFollowing("CID");
-                        cid = xmlReader.ReadElementContentAsString();
-                    }
-                }
-
-                return cid;
-            } catch (Exception ex) {
-                throw new Exception("Exception calling 'ParseSoapResult': " + ex.Message);
-            }
-        }
-
-        private static HttpWebRequest CreateWebRequest(string url, string action) {
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
-            webRequest.Method = "POST";
-            webRequest.Accept = "text/xml";
-            webRequest.ContentType = "text/xml; charset=\"utf-8\"";
-            webRequest.Headers.Add("SOAPAction", action);
-
-            return webRequest;
-        }
-
-        private static XmlDocument CreateSoapEnvelope(string installationId, string extendedProductId) {
-            XmlDocument soapEnvelopeDocument = new XmlDocument();
-
-            // Create new XML Document
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.XmlResolver = null;
-
-            xmlDoc.LoadXml("<ActivationRequest xmlns=\"http://www.microsoft.com/DRM/SL/BatchActivationRequest/1.0\">" +
-                "<VersionNumber>2.0</VersionNumber>" +
-                "<RequestType>1</RequestType>" +
-                "<Requests>" +
-                "<Request>" +
-                "<PID>" + extendedProductId + "</PID>" +
-                "<IID>" + installationId + "</IID>" +
-                "</Request>" +
-                "</Requests>" +
-                "</ActivationRequest>"
-            );
-
-            // Get the unicode byte array of xmlDoc and convert it to Base64
-            byte[] bytes = Encoding.Unicode.GetBytes(xmlDoc.InnerXml);
+            // Get the unicode byte array of activationRequest and convert it to Base64.
+            byte[] bytes = Encoding.Unicode.GetBytes(activationRequest);
             string requestXml = Convert.ToBase64String(bytes);
+
+            XmlDocument soapRequest = new XmlDocument();
 
             HMACSHA256 hMACSHA;
             using (hMACSHA = new HMACSHA256()) {
-                hMACSHA.Key = macKey;
-                // Compute digest of the Base64 XML bytes
-                // Create Base64 hash using HMAC/SHA256
+                hMACSHA.Key = MacKey;
+                // Convert the HMAC hashed data to Base64.
                 string digest = Convert.ToBase64String(hMACSHA.ComputeHash(bytes));
-                soapEnvelopeDocument.LoadXml("<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
-                    "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">" +
-                    "<soap:Body>" +
-                    "<BatchActivate xmlns=\"http://www.microsoft.com/BatchActivationService\">" +
-                    "<request>" +
-                    "<Digest>" + digest + "</Digest>" +
-                    "<RequestXml>" + requestXml + "</RequestXml>" +
-                    "</request>" +
-                    "</BatchActivate>" +
-                    "</soap:Body>" +
+
+                soapRequest.LoadXml(
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                        "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">" +
+                        "<soap:Body>" +
+                            "<BatchActivate xmlns=\"http://www.microsoft.com/BatchActivationService\">" +
+                                "<request>" +
+                                    "<Digest>" + digest + "</Digest>" +
+                                    "<RequestXml>" + requestXml + "</RequestXml>" +
+                                "</request>" +
+                            "</BatchActivate>" +
+                        "</soap:Body>" +
                     "</soap:Envelope>"
                 );
             }
 
-            return soapEnvelopeDocument;
+            return soapRequest;
         }
 
-        private static void InsertSoapEnvelopeIntoWebRequest(XmlDocument soapEnvelopeXml, HttpWebRequest webRequest) {
+        private static HttpWebRequest CreateWebRequest(XmlDocument soapRequest) {
+            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(Uri);
+            webRequest.Accept = "text/xml";
+            webRequest.ContentType = "text/xml; charset=\"utf-8\"";
+            webRequest.Headers.Add("SOAPAction", Action);
+            webRequest.Method = "POST";
+
             try {
+                // Insert SOAP envelope
                 using (Stream stream = webRequest.GetRequestStream()) {
-                    soapEnvelopeXml.Save(stream);
+                    soapRequest.Save(stream);
                 }
+
             } catch (Exception ex) {
-                throw new Exception("Exception calling 'InsertSoapEnvelopeIntoWebRequest': " + ex.Message);
+                throw new Exception("Exception calling 'CreateWebRequest': " + ex.Message);
+            }
+
+            return webRequest;
+        }
+
+        private static string ParseSoapResponse(XmlDocument soapResponse) {
+            try {
+                XmlNamespaceManager xmlNsManager = new XmlNamespaceManager(soapResponse.NameTable);
+                xmlNsManager.AddNamespace("soap", "http://schemas.xmlsoap.org/soap/envelope/");
+                xmlNsManager.AddNamespace("msbas", "http://www.microsoft.com/BatchActivationService");
+                xmlNsManager.AddNamespace("msbar", "http://www.microsoft.com/DRM/SL/BatchActivationResponse/1.0");
+
+                string responseXmlString = soapResponse.SelectSingleNode("/soap:Envelope/soap:Body/msbas:BatchActivateResponse/msbas:BatchActivateResult/msbas:ResponseXml", xmlNsManager).InnerText;
+
+                XmlDocument responseXml = new XmlDocument();
+                responseXml.LoadXml(responseXmlString);
+
+                if (responseXml.SelectSingleNode("//msbar:CID", xmlNsManager) != null) {
+                    string confirmationId = responseXml.SelectSingleNode("//msbar:CID", xmlNsManager).InnerText;
+                    return confirmationId;
+
+                } else if (responseXml.SelectSingleNode("//msbar:ErrorCode", xmlNsManager) != null) {
+                    string errorCode = responseXml.SelectSingleNode("//msbar:ErrorCode", xmlNsManager).InnerText;
+                    throw new Exception("The ´Confirmation ID could not be retrieved (" + errorCode + ")");
+
+                } else {
+                    throw new Exception("The SOAP response could not be parsed.");
+                }
+
+            } catch (Exception ex) {
+                throw new Exception("Exception calling 'ParseSoapResult': " + ex.Message);
             }
         }
     }
