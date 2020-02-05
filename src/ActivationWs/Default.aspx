@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="ActivationWs.Default" %>
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="ActivationWs.WebForm" %>
 <%@ Import Namespace="ActivationWs" %>
 
 <!DOCTYPE html>
@@ -94,8 +94,8 @@
         public void Submit_Click(Object sender, EventArgs E) {
             try {
                 if(!((InstallationId.Text == "") || (ExtendedProductId.Text == ""))) {
-                    ActivationWs ActivationService = new ActivationWs();
-                    Result.Text = "The Confirmation ID is: <b>" +  ActivationService.AcquireConfirmationId(InstallationId.Text, ExtendedProductId.Text) + "</b>.";
+                    ActivationService activationService = new ActivationService();
+                    Result.Text = "The Confirmation ID is: <b>" +  activationService.AcquireConfirmationId(InstallationId.Text, ExtendedProductId.Text) + "</b>.";
                 } else {
                     Result.Text = "Please enter a Confirmation ID and Extended Product ID.";
                 }
