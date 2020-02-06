@@ -68,9 +68,7 @@ namespace ActivationWs
 
             XmlDocument soapRequest = new XmlDocument();
 
-            HMACSHA256 hMACSHA;
-            using (hMACSHA = new HMACSHA256()) {
-                hMACSHA.Key = MacKey;
+            using (HMACSHA256 hMACSHA = new HMACSHA256(MacKey)) {
                 // Convert the HMAC hashed data to Base64.
                 string digest = Convert.ToBase64String(hMACSHA.ComputeHash(bytes));
 
@@ -130,14 +128,14 @@ namespace ActivationWs
 
                 } else if (responseXml.SelectSingleNode("//msbar:ErrorCode", xmlNsManager) != null) {
                     string errorCode = responseXml.SelectSingleNode("//msbar:ErrorCode", xmlNsManager).InnerText;
-                    throw new Exception("The ´Confirmation ID could not be retrieved (" + errorCode + ")");
+                    throw new Exception("The Confirmation ID could not be retrieved (" + errorCode + ")");
 
                 } else {
                     throw new Exception("The SOAP response could not be parsed.");
                 }
 
             } catch (Exception ex) {
-                throw new Exception("Exception calling 'ParseSoapResult': " + ex.Message);
+                throw new Exception("Exception calling 'ParseSoapResponse': " + ex.Message);
             }
         }
     }
