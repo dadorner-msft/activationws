@@ -12,9 +12,11 @@
 
 ## Introduction
 
-Welcome to the ActivationWs GitHub repository! ActivationWs is a customizable Multiple Activation Key (MAK) distribution and activation solution. It includes an ASP.NET web service and a PowerShell script to install and activate the MAK. 
+Welcome to the ActivationWs GitHub repository!
 
-ActivationWs was designed for organizations who are facing challenges in the deployment and activation of their Extended Security Update (ESU) MAK key. It provides you with a “pull-based” activation solution, eliminates the pre-requisites that VAMT needs and reduces obstacles you could face in the product key activation process.
+ActivationWs is a customizable solution that allows you to automate the product activation process with the use of a Multiple Activation Key (MAK). It includes an ASP.NET web service and a PowerShell script to install and activate the MAK. 
+
+ActivationWs was designed for organizations who are facing challenges in the deployment and activation of their Extended Security Update (ESU) MAK key. It provides you with a "pull-based" activation solution, eliminates the pre-requisites that VAMT needs and reduces obstacles you could face in the product key activation process.
 
 ### How does ActivationWs work and how does it benefit you?
 
@@ -29,7 +31,8 @@ ActivationWs was designed for organizations who are facing challenges in the dep
 [Back to ToC](#table-of-contents)
 
 ## Requirements
-- ActivationWs web service runs on IIS and requires the .NET Framework 4.6. It also requires access to the Microsoft BatchActivation Service (`https://activation.sls.microsoft.com`). A proxy server can be specified in the web.config file, when necessary.
+- ActivationWs web service runs on IIS and requires the .NET Framework 4.6 and ASP.NET modules.
+- The web service requires access to the Microsoft BatchActivation Service (`https://activation.sls.microsoft.com`). A proxy server can be specified in the web.config file, when necessary.
 - `Activate-Product.ps1` requires Windows PowerShell v2.0 or later and needs to be executed with administrative rights.
 
 [Back to ToC](#table-of-contents)
@@ -40,17 +43,29 @@ The latest version of this solution can be downloaded from the [ActivationWs Git
 
 1. Deploy the ActivationWs web service to IIS
 2. Verify that the **latest** [Security Monthly Quality Rollup](https://www.catalog.update.microsoft.com/Search.aspx?q=2020-01%20Security%20Monthly%20Quality%20Rollup) is installed on your ESU eligible devices
-3. Deploy the PowerShell script `Activate-Product.ps1` to the ESU eligible devices to install and activate the license
+3. Deploy the PowerShell script `Activate-Product.ps1` to those devices to install and activate the license
 
-![Activate-License](https://github.com/dadorner-msft/activationws/blob/master/doc/images/Activate-License-v0.15.2.gif)
+![activate-product](https://github.com/dadorner-msft/activationws/blob/master/doc/images/Activate-License-v0.15.2.gif)
+
+### Manual Confirmation ID retrieval
+
+ActivationWs also supports you in the activation process of air-gapped devices.
+
+1. Browse to the ActivationWs site
+2. Enter the Installation- and Product ID to retreive the corresponding Confirmation ID
+3. Activate the product by `slmgr.vbs /atp <Confirmation ID> <Activation ID>`
+
+![manual-cid-retrieval](https://github.com/dadorner-msft/activationws/blob/master/doc/images/manual-cid-retrieval.png)
 
 [Back to ToC](#table-of-contents)
 
 ## FAQ
 
+The following section contains answers to frequently asked questions. Please feel free to [contact me](https://github.com/login?return_to=https%3A%2F%2Fgithub.com%2Fdadorner-msft) should you have any question or need support.
+
 **To which external addresses does ActivationWs web service specifically need access to?**
 
-ActivationWs web service requires access to `https://activation.sls.microsoft.com`
+ActivationWs web service requires access to the URL listed in the [requirement](#requirements) section.
 
 **I'd like to evaluate ActivationWs, but I do not have access to the Extended Security MAK key yet. How can I evaluate ActivationWs beforehand?**
 
@@ -70,12 +85,12 @@ If it fails even though you followed these steps, please run `slmgr.vbs /ipk <pr
 
 **Activate-Product.ps1 fails with "[Error] Product activation failed (3221549105)."**
 
-The field test results showed that this error occurs on devices that haven't been connected to the Internet for a while. Please deploy the [latest monthly rollup](https://www.catalog.update.microsoft.com/Search.aspx?q=2020-01%20Security%20Monthly%20Quality%20Rollup) to update the system components to finish up the activation.
+The field test results showed that this error occurs on devices that haven't been connected to the Internet for a while. Please deploy the latest [Security Monthly Quality Rollup](https://www.catalog.update.microsoft.com/Search.aspx?q=2020-01%20Security%20Monthly%20Quality%20Rollup) to update the system components to finish up the activation.
 
 **Activate-Product.ps1 fails with "[Warning] The remote server returned an error: (500) Internal Server Error.**
 
 This is a "server-side" error, meaning that the ActivationWs web service couldn't acquire the Confirmation Id. Reasons include:
-- The ActivationWs web service couldn't connect to the Microsoft BatchActivation Service
+- The ActivationWs web service couldn't connect to the [required URL](#requirements)
 - No MAK activations are left on your product key
 - The specified WebServiceUrl is incorrect
 
