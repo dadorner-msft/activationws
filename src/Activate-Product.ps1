@@ -5,112 +5,124 @@
 .DESCRIPTION
     This script can be used to install and activate a Multiple Activation Key (MAK)
 	
-.PARAMETER ProductKey
-    Specifies the product key
-	
-.PARAMETER WebServiceUrl
-    Specifies the URL to the ActivationWs web service
-	
-.PARAMETER LogFile
-    Specifies the full path to the log file
-	
-.PARAMETER MaximumRetryCount
-    Specifies the number of connection retries if the ActivationWs web service cannot be contacted
-	
-.PARAMETER RetryIntervalSec
-    Specifies the interval in seconds between retries for the connection when a failure is received
-
-.EXAMPLE
-    ./Activate-Product.ps1 -ProductKey XXXXX-XXXXX-XXXXX-XXXXX-XXXXX -WebServiceUrl http://client1:8081/activationws.asmx -LogFile C:\logs\activation.log -MaximumRetryCount 5 -RetryIntervalSec 40
-	
     Exit Codes:  0   Success
                  1   Unknown error
-                 10  Failed to install the product key
+                 10  Product key has failed to install
                  11  No license information for product key was found
-                 12  Failed to retrieve the license information
                  13  Product activation failed
                  14  Failed to deposit Confirmation ID
                  20  Number of maximum connection retries reached
                  21  Exception calling 'CallWebService'
-                 30  Exception calling 'LogAndConsole'
+                 30  Exception calling 'Write-Log'
+                 40  Exception calling 'Update-LicenseStatus'
+                 50  Product key has failed to uninstall
 				 
-.LINK
-    https://github.com/dadorner-msft/activationws
+.PARAMETER ProductKey
+    Specifies the product key.
+	
+.PARAMETER WebServiceUrl
+    Specifies the URL to the ActivationWs web service.
+	
+.PARAMETER MaximumRetryCount
+    Specifies the number of connection retries if the ActivationWs web service cannot be contacted.
+    Default value is 3 times.
+	
+.PARAMETER RetryIntervalSec
+    Specifies the interval in seconds between retries for the connection when a failure is received.
+    Default value is 30 seconds.
+	
+.PARAMETER Uninstall
+    Specifies that the product key should be uninstalled.
+	
+.PARAMETER LogFile
+    Specifies the full path to the log file.
+	
+.EXAMPLE
+    ./Activate-Product.ps1 -ProductKey XXXXX-XXXXX-XXXXX-XXXXX-XXXXX -WebServiceUrl http://client1:8081/activationws.asmx -MaximumRetryCount 5 -RetryIntervalSec 40 -LogFile C:\logs\activation.log
+	
+.EXAMPLE
+    ./Activate-Product.ps1 -ProductKey XXXXX-XXXXX-XXXXX-XXXXX-XXXXX -Uninstall
 	
 .NOTES
     Filename:    Activate-Product.ps1
-    Version:     0.16.1
+    Version:     0.17.1
     Author:      Daniel Dorner
-    Date:        01/19/2020
+    Date:        03/05/2020
 	
     This script code is provided "as is", with no guarantee or warranty concerning
     the usability or impact on systems and may be used, distributed, and
-    modified in any way provided the parties agree and acknowledge the 
-    Microsoft or Microsoft Partners have neither accountability or 
+    modified in any way provided the parties agree and acknowledge the
+    Microsoft or Microsoft Partners have neither accountability or
     responsibility for results produced by use of this script.
 	
+.LINK
+    https://github.com/dadorner-msft/activationws
 #>
 
-
-param (
-	[Parameter(
-		Mandatory = $true,
-		ValueFromPipeline = $true,
-		HelpMessage = 'Specifies the product key. It is a 25-character code and looks like this: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX',
-		Position = 0)]
+[CmdletBinding(DefaultParameterSetName = 'install')]
+param
+(
+	[Parameter(Mandatory = $true,
+		ValueFromPipelineByPropertyName = $true,
+		HelpMessage = 'Specifies the product key. It is a 25-character code and looks like this: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX')]
 	[ValidatePattern('^([A-Z0-9]{5}-){4}[A-Z0-9]{5}$')]
 	[string]$ProductKey,
 
-	[Parameter(
+	[Parameter(ParameterSetName = 'install',
 		Mandatory = $true,
-		ValueFromPipeline = $true,
-		HelpMessage = 'Specifies the URL to the ActivationWs web service, e.g. "https://server.domain.name/ActivationWs.asmx"',
-	    Position = 1)]
+		ValueFromPipelineByPropertyName = $true,
+		HelpMessage = 'Specifies the URL to the ActivationWs web service, e.g. "https://server.domain.name/ActivationWs.asmx"')]
 	[ValidateNotNullOrEmpty()]
 	[string]$WebServiceUrl,
 
-	[Parameter(
-		Mandatory = $false,
-		ValueFromPipeline = $true,
-		HelpMessage = 'Specifies the full path to the log file, e.g. "C:\Log\Logfile.log"',
-		Position = 2)]
-	[ValidateNotNullOrEmpty()]
-	[string]$LogFile = "$env:TEMP\Activate-Product.log",
+	[Parameter(ParameterSetName = 'install',
+		ValueFromPipelineByPropertyName = $true,
+		HelpMessage = 'Specifies the number of connection retries if the ActivationWs web service cannot be contacted, e.g. "5"')]
+	[ValidateRange(0, 2147483647)]
+	[int]$MaximumRetryCount = 3,
 	
-	[Parameter(
-		Mandatory = $false,
-		ValueFromPipeline = $true,
-		HelpMessage = 'Specifies the number of connection retries if the ActivationWs web service cannot be contacted, e.g. "5"',
-		Position = 3)]
-	[ValidateNotNullOrEmpty()]
-	[uint16]$MaximumRetryCount = 3,
+	[Parameter(ParameterSetName = 'install',
+		ValueFromPipelineByPropertyName = $true,
+		HelpMessage = 'Specifies the interval in seconds between retries for the connection when a failure is received, e.g. "30"')]
+	[ValidateRange(0, 2147483647)]
+	[int]$RetryIntervalSec = 30,
 	
-	[Parameter(
-		Mandatory = $false,
-		ValueFromPipeline = $true,
-		HelpMessage = 'Specifies the interval in seconds between retries for the connection when a failure is received, e.g. "30"',
-		Position = 4)]
+	[Parameter(ParameterSetName = 'uninstall', HelpMessage = 'Specifies that the product key should be uninstalled from the system, e.g. "true"')]
+	[switch]$Uninstall,
+	
+	[Parameter(ValueFromPipelineByPropertyName = $true, HelpMessage = 'Specifies the full path to the log file, e.g. "C:\Log\Logfile.log"')]
 	[ValidateNotNullOrEmpty()]
-	[uint16]$RetryIntervalSec = 30
+	[string]$LogFile = "$env:TEMP\Activate-Product.log"
 )
 
-function LogAndConsole($Message)
-{
+$script:scriptVersion = "0.17.1"
+$script:fullyQualifiedHostName = [System.Net.Dns]::GetHostByName($env:COMPUTERNAME).HostName
+$script:logInitialized = $false
+
+function Write-Log {
+	[CmdletBinding()]
+	param (
+		[Parameter(Position = 0)]
+		[AllowEmptyString()]
+		[string[]]$Message
+	)
+
+	$timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+	
 	try {
-		if (!$logInitialized) {
-			"{0}; <---- Starting {1} on host {2}  ---->" -f (Get-Date), $MyInvocation.ScriptName, $fullyQualifiedHostName | Out-File -FilePath $LogFile -Append -Force
-			"{0}; {1} version: {2}" -f (Get-Date), $script:MyInvocation.MyCommand.Name, $scriptVersion | Out-File -FilePath $LogFile -Append -Force
-			"{0}; Initialized logging at {1}" -f (Get-Date), $LogFile | Out-File -FilePath $LogFile -Append -Force
+		if (-not $script:logInitialized) {
+			"{0}; <---- Starting {1} on host {2}  ---->" -f $timestamp, $MyInvocation.ScriptName, $script:fullyQualifiedHostName | Out-File -FilePath $LogFile -Append -Force
+			"{0}; {1} version: {2}" -f $timestamp, $script:MyInvocation.MyCommand.Name, $script:scriptVersion | Out-File -FilePath $LogFile -Append -Force
+			"{0}; Initialized logging at {1}" -f $timestamp, $LogFile | Out-File -FilePath $LogFile -Append -Force
 			
 			$script:logInitialized = $true
 		}
 		
 		foreach ($line in $Message) {
-			$line = "{0}; {1}" -f (Get-Date), $line
+			Write-Host $line
+			$line = "{0}; {1}" -f $timestamp, $line
 			$line | Out-File -FilePath $LogFile -Append -Force
 		}
-		
-		Write-Host $Message
 		
 	} catch [System.IO.DirectoryNotFoundException] {
 		$script:LogFile = "$env:TEMP\Activate-Product.log"
@@ -129,21 +141,161 @@ function LogAndConsole($Message)
 		Write-Host "[Warning] $_ The output would be redirected to `'$LogFile`'."
 		
 	} catch {
-		Write-Host  "[Error] Exception calling 'LogAndConsole':" $_.Exception.Message
+		Write-Host  "[Error] Exception calling 'Write-Log': $_"
 		Exit 30
 	}
 }
 
-function CallWebService {
+function Install-ProductKey {
+	[CmdletBinding()]
+	param (
+		[string]$ProductKey
+	)
+	
+	$partialProductKey = $ProductKey.Substring($ProductKey.Length - 5)
+	$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
+	
+	# Check if product key is installed and activated.
+	if ($licensingProduct) {
+		# Product key is installed.
+		if ($licensingProduct.LicenseStatus -eq 1) {
+			# Product key is activated.
+			Write-Log -Message "The product key is installed and activated."
+			Exit 0
+		}
+		
+		# Product key is not activated.
+		Write-Log -Message "The product key is installed but not activated."
+		Enable-Product -PartialProductKey $partialProductKey
+		
+	} else {
+		# Product key is not installed.
+		$licensingService = Get-WmiObject -Query ('SELECT Version FROM SoftwareLicensingService')
+		
+		try {
+			# Install product key.
+			Write-Log -Message "Installing product key $ProductKey ..."
+			$null = $licensingService.InstallProductKey($ProductKey)
+			Update-LicenseStatus
+			
+		} catch {
+			Write-Log -Message "[Error] The product key has failed to install."
+			Exit 10
+		}
+		
+		# Activate product key.
+		Enable-Product -PartialProductKey $partialProductKey
+	}
+}
+
+function Uninstall-ProductKey {
+	[CmdletBinding()]
+	param (
+		[string]$ProductKey
+	)
+
+	# Retrieve license information.
+	Write-Log -Message "Retrieving license information..."
+	$partialProductKey = $ProductKey.Substring($ProductKey.Length - 5)
+	$licensingProduct = $null
+	$licensingProduct = Get-WmiObject -Query ('SELECT ID FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
+	
+	if (-not $licensingProduct) {
+		Write-Log -Message "No license information for product key $ProductKey was found."
+		Exit 11
+	}
+
+	# Uninstall product key.
+	try {
+		$null = $licensingProduct.UninstallProductKey()
+		Update-LicenseStatus
+		
+		Write-Log -Message "The product key has been successfully uninstalled."
+		Exit 0
+		
+	} catch {
+		Write-Log -Message "[Error] The product key has failed to uninstall."
+		Exit 50
+	}
+}
+
+function Update-LicenseStatus {
+	try {
+		$licensingService = $null
+		$licensingService = Get-WmiObject -Query ('SELECT Version FROM SoftwareLicensingService')
+		$null = $licensingService.RefreshLicenseStatus()
+	
+	} catch {
+		Write-Log -Message "[Error] Exception calling 'Update-LicenseStatus': $_"
+		Exit 40
+	}
+}
+
+function Enable-Product {
+	[CmdletBinding()]
+	param (
+		[string]$PartialProductKey
+	)
+
+	# Retrieve license information.
+	Write-Log -Message "Retrieving license information..."
+	$licensingProduct = $null
+	$licensingProduct = Get-WmiObject -Query ('SELECT ID, Name, OfflineInstallationId, ProductKeyID FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
+
+	if (-not $licensingProduct) {
+		Write-Log -Message "No license information for product key $ProductKey was found."
+		Exit 11
+	}
+	
+	$licenseName = $licensingProduct.Name                       # Name
+	$InstallationId = $licensingProduct.OfflineInstallationId   # Installation ID
+	$activationId = $licensingProduct.ID                        # Activation ID
+	$ExtendedProductId = $licensingProduct.ProductKeyID         # Extended Product ID
+   
+	Write-Log -Message "Name             : $licenseName"
+	Write-Log -Message "Installation ID  : $InstallationId"
+	Write-Log -Message "Activation ID    : $activationId"
+	Write-Log -Message "Extd. Product ID : $ExtendedProductId"
+
+	# Retrieve the Confirmation ID from ActivationWs web service.
+	$confirmationId = Invoke-WebService -WebServiceUrl $WebServiceUrl -InstallationId $InstallationId -ExtendedProductId $ExtendedProductId
+	# Activate the product by depositing the Confirmation ID.
+	Write-Log -Message "Confirmation ID  : $confirmationId"
+	Write-Log -Message "Activating product key..."
+	try {
+		# Activate product with provided Confirmation ID.
+		$null = $licensingProduct.DepositOfflineConfirmationId($InstallationId, $confirmationId)
+		
+	} catch {
+		Write-Log -Message "[Error] Failed to deposit the Confirmation ID. The product key was not activated."
+		Exit 14
+	}
+
+	# Refresh license status.
+	Update-LicenseStatus
+	
+	# Check if the activation was successful.
+	$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus, LicenseStatusReason FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
+	
+	if (!$licensingProduct.LicenseStatus -eq 1) {
+		Write-Log -Message "[Error] The product has failed to activate ($($licensingProduct.LicenseStatusReason))."
+		Exit 13
+	}
+	
+	Write-Log -Message "The product has been successfully activated."
+}
+
+function Invoke-WebService {
+	[CmdletBinding()]
 	param(
 		[string]$WebServiceUrl, 
 		[string]$InstallationId, 
 		[string]$ExtendedProductId
 	)
 
-	LogAndConsole "Sending an activation request to $WebServiceUrl..."
+	Write-Log -Message "Sending an activation request to $WebServiceUrl..."
 	
-$soapEnvelopeDocument = [xml]@"
+	$soapEnvelopeDocument = [xml]@"
 <?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
 	<soap:Body>
@@ -156,24 +308,24 @@ $soapEnvelopeDocument = [xml]@"
 "@
 	
 	[bool]$requestSucceeded = $false
-	[uint16]$numberOfRetries = 0
+	[int]$numberOfRetries = 0
 	# Connect to the ActivationWs web service.
 	while (-not $requestSucceeded) {
 		try {
 			if ($numberOfRetries -le $MaximumRetryCount) {
 				$webRequest = [System.Net.WebRequest]::Create($WebServiceUrl) 
-				$webRequest.Accept      = "text/xml"
-				$webRequest.ContentType = "text/xml;charset=`"utf-8`""				
-				$webRequest.Headers.Add("SOAPAction","`"http://tempuri.org/AcquireConfirmationId`"")
-				$webRequest.Method      = "POST"
-				$webRequest.UserAgent   = "PowerShell/{0} ({1}) {2}/{3}" -f $PSVersionTable.PSVersion, $fullyQualifiedHostName, $script:MyInvocation.MyCommand.Name, $scriptVersion
+				$webRequest.Accept = "text/xml"
+				$webRequest.ContentType = "text/xml;charset=`"utf-8`""
+				$webRequest.Headers.Add("SOAPAction", "`"http://tempuri.org/AcquireConfirmationId`"")
+				$webRequest.Method = "POST"
+				$webRequest.UserAgent = "PowerShell/{0} ({1}) {2}/{3}" -f $PSVersionTable.PSVersion, $script:fullyQualifiedHostName, $script:MyInvocation.MyCommand.Name, $script:scriptVersion
 				
 				$requestStream = $webRequest.GetRequestStream()
 				$soapEnvelopeDocument.Save($requestStream)
 				$requestStream.Close()
 				$response = $webRequest.GetResponse()
 				
-				LogAndConsole "Response status: $([int]$response.StatusCode) - $($response.StatusCode)"
+				Write-Log -Message "Response status: $([int]$response.StatusCode) - $($response.StatusCode)"
 				
 				$responseStream = $response.GetResponseStream()
 				$soapReader = [System.IO.StreamReader]($responseStream)
@@ -184,118 +336,41 @@ $soapEnvelopeDocument = [xml]@"
 				
 			} else {
 				# The maximum number of connection retries was reached. Stop the script execution.
-				LogAndConsole "[Error] Number of maximum connection retries reached. The execution of this script will be stopped."
+				Write-Log -Message "[Error] Number of maximum connection retries reached. The execution of this script will be stopped."
 				Exit 20
 			}
 			
 		} catch [System.Net.WebException] {
-			# The ActivationWs web service could not be contacted. Reasons include:
-			# The remote host could not be resolved; Unable to connect to the remote host; HTTP errors.
-			$exMessage = $_.Exception.Message
-			LogAndConsole "[Warning] $exMessage"
+			# The ActivationWs web service could not be contacted or returned an unexpected response.
+			Write-Log -Message "[Warning] $_"
 			
 			$numberOfRetries ++
 			if ($numberOfRetries -le $MaximumRetryCount) {
-				LogAndConsole "Connection to web service will be retried in $RetryIntervalSec seconds ($numberOfRetries/$MaximumRetryCount)..."
+				Write-Log -Message "Connection to web service will be retried in $RetryIntervalSec seconds ($numberOfRetries/$MaximumRetryCount)..."
 				# Suspend the activity before the connection is retried.
 				Start-Sleep $RetryIntervalSec
 			}
 			
 		} catch {
-			$exMessage = $_.Exception.Message
-			LogAndConsole "[Error] Exception calling 'CallWebService': $exMessage"
+			Write-Log -Message "[Error] Exception calling 'CallWebService': $_"
 			Exit 21
 		}
 	}
 
-	LogAndConsole "Confirmation ID retrieved."
+	Write-Log -Message "Confirmation ID retrieved."
 	
 	# Return Confirmation ID.
 	return $responseXml.Envelope.Body.AcquireConfirmationIdResponse.InnerText
 }
-
-function InstallAndActivateProductKey([string]$ProductKey) {
-
-	try {
-		# Check if product key is already installed and activated.
-		$partialProductKey = $ProductKey.Substring($ProductKey.Length - 5)
-		$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
-		
-		if ($licensingProduct.LicenseStatus -eq 1) {
-			LogAndConsole "The product is already activated."
-			Exit 0
-		}
 	
-		# Install the product key.
-		LogAndConsole "Installing product key $ProductKey ..."
-		$licensingService = Get-WmiObject -Query 'SELECT Version FROM SoftwareLicensingService'
-		$licensingService.InstallProductKey($ProductKey) | Out-Null
-		$licensingService.RefreshLicenseStatus() | Out-Null
-
-	} catch {
-		LogAndConsole "[Error] Failed to install the product key."
-		Exit 10
-	}
-
-	try {
-		# Get the licensing information.
-		LogAndConsole "Retrieving license information..."
-		$licensingProduct = Get-WmiObject -Query ('SELECT ID, Name, OfflineInstallationId, ProductKeyID FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
-
-		if (!$licensingProduct) {
-			LogAndConsole "No license information for product key $ProductKey was found."
-			Exit 11
-		}
-		
-		$licenseName = $licensingProduct.Name                       # Name  
-		$InstallationId = $licensingProduct.OfflineInstallationId   # Installation ID
-		$activationId = $licensingProduct.ID                        # Activation ID
-		$ExtendedProductId = $licensingProduct.ProductKeyID         # Extended Product ID
-	   
-		LogAndConsole "Name             : $licenseName"
-		LogAndConsole "Installation ID  : $InstallationId"
-		LogAndConsole "Activation ID    : $activationId"
-		LogAndConsole "Extd. Product ID : $ExtendedProductId"
-		
-	} catch {
-		LogAndConsole "[Error] Failed to retrieve the license information."
-		Exit 12
-	}
-
-	# Retrieve the Confirmation ID.
-	$confirmationId = CallWebService $WebServiceUrl $InstallationId $ExtendedProductId
-
-	try {
-		# Activate the product by depositing the Confirmation ID.
-		LogAndConsole "Confirmation ID  : $confirmationId"
-		LogAndConsole "Activating product..."
-		$licensingProduct.DepositOfflineConfirmationId($InstallationId, $confirmationId) | Out-Null
-		$licensingService.RefreshLicenseStatus() | Out-Null
-		
-		# Check if the activation was successful.
-		$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus, LicenseStatusReason FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
-		
-		if (!$licensingProduct.LicenseStatus -eq 1) {
-			LogAndConsole "[Error] Product activation failed ($($licensingProduct.LicenseStatusReason))."
-			Exit 13
-		}
-		
-		LogAndConsole "Product activated successfully."
-		
-	} catch {
-		LogAndConsole "[Error] Failed to deposit the Confirmation ID. The product was not activated."
-		Exit 14
-	}
+# Initialize logging.
+Write-Log -Message ""
+	
+if ($Uninstall) {
+	# Uninstall product key.
+	Uninstall-ProductKey -ProductKey $ProductKey
+	
+} else {
+	# Install product key.
+	Install-ProductKey -ProductKey $ProductKey
 }
-
-function Main {
-	$scriptVersion = "0.16.1"
-	$fullyQualifiedHostName = [System.Net.Dns]::GetHostByName($env:COMPUTERNAME).HostName
-	
-	# Initialize logging
-	LogAndConsole ""
-	
-	InstallAndActivateProductKey($ProductKey)
-}
-
-Main
