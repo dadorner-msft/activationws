@@ -128,6 +128,12 @@ namespace ActivationWs
 
                 } else if (responseXml.SelectSingleNode("//msbar:ErrorCode", xmlNsManager) != null) {
                     string errorCode = responseXml.SelectSingleNode("//msbar:ErrorCode", xmlNsManager).InnerText;
+                    
+                    if (responseXml.SelectSingleNode("//msbar:ActivationRemaining", xmlNsManager) != null) {
+                        int remainingActivations = Convert.ToInt32(responseXml.SelectSingleNode("//msbar:ActivationRemaining", xmlNsManager).InnerText);
+                        throw new Exception("The Confirmation ID could not be retrieved (" + errorCode + "). Remaining MAK activation count: " + remainingActivations);
+                    }
+
                     throw new Exception("The Confirmation ID could not be retrieved (" + errorCode + ")");
 
                 } else {
