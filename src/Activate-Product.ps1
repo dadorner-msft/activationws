@@ -44,9 +44,9 @@
 
 .NOTES
     Filename:    Activate-Product.ps1
-    Version:     0.17.3
+    Version:     0.17.4
     Author:      Daniel Dorner
-    Date:        03/25/2020
+    Date:        05/18/2020
 
     This  script  code  is  provided  "as  is",  with  no guarantee or warranty
     concerning the usability or impact on systems and may be used, distributed,
@@ -92,7 +92,7 @@ param
 	[string]$LogFile = "$env:TEMP\Activate-Product.log"
 )
 
-$script:scriptVersion = "0.17.3"
+$script:scriptVersion = "0.17.4"
 $script:fullyQualifiedHostName = [System.Net.Dns]::GetHostByName($env:COMPUTERNAME).HostName
 $script:logInitialized = $false
 
@@ -154,6 +154,7 @@ function Install-ProductKey {
 	} else {
 		# Product key is not installed.
 		$licensingService = Get-WmiObject -Query ('SELECT Version FROM SoftwareLicensingService')
+		Write-Log -Message "The Software Licensing Service version is '$($licensingService.Version)'."
 
 		try {
 			# Install product key.
