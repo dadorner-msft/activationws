@@ -1,0 +1,1 @@
+Please note that this folder contains the source code of the ActivationWs solution. It cannot be executed natively on your computer, it has to be compiled first. If you do not want to compile your own version, please download the latest [release](https://github.com/dadorner-msft/ActivationWs/releases) instead.
