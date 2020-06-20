@@ -10,9 +10,9 @@
                  10  Product key has failed to install
                  11  Product could not be found
                  13  Product has failed to activate
-                 14  Failed to deposit Confirmation ID
+                 15  Product is not supported for activation
                  20  Number of maximum connection retries reached
-                 21  Exception calling 'CallWebService'
+                 21  Exception calling 'Invoke-WebService'
                  30  Exception calling 'Write-Log'
                  50  Product key has failed to uninstall
 
@@ -44,9 +44,9 @@
 
 .NOTES
     Filename:    Activate-Product.ps1
-    Version:     0.17.4
+    Version:     0.18.0
     Author:      Daniel Dorner
-    Date:        05/18/2020
+    Date:        06/21/2020
 
     This  script  code  is  provided  "as  is",  with  no guarantee or warranty
     concerning the usability or impact on systems and may be used, distributed,
@@ -70,8 +70,15 @@ param
 	[Parameter(ParameterSetName = 'install',
 		Mandatory = $true,
 		ValueFromPipelineByPropertyName = $true,
-		HelpMessage = 'Please enter the URL of the ActivationWs web service, e.g. "https://server.domain.name/ActivationWs.asmx"')]
-	[ValidateNotNullOrEmpty()]
+		HelpMessage = 'Please enter the URL of the ActivationWs web service, eg. "https://server.domain.name/ActivationWs.asmx"')]
+	[ValidateScript({
+		$uri = [System.URI]$_
+		if($uri.AbsoluteURI -ne $null -and $uri.Scheme -match '^https?$' -and $uri.AbsoluteURI.EndsWith(".asmx")) {
+			$true
+		} else {
+			throw 'Please enter the URL of the ActivationWs web service, eg. "https://server.domain.name/ActivationWs.asmx"'
+		}
+	})]
 	[string]$WebServiceUrl,
 
 	[Parameter(ParameterSetName = 'install',
@@ -92,7 +99,7 @@ param
 	[string]$LogFile = "$env:TEMP\Activate-Product.log"
 )
 
-$script:scriptVersion = "0.17.4"
+$script:scriptVersion = "0.18.0"
 $script:fullyQualifiedHostName = [System.Net.Dns]::GetHostByName($env:COMPUTERNAME).HostName
 $script:logInitialized = $false
 
@@ -156,15 +163,36 @@ function Install-ProductKey {
 		$licensingService = Get-WmiObject -Query ('SELECT Version FROM SoftwareLicensingService')
 		Write-Log -Message "The Software Licensing Service version is '$($licensingService.Version)'."
 
+		# Install product key.
+		Write-Log -Message "Installing product key '$ProductKey'..."
+
 		try {
-			# Install product key.
-			Write-Log -Message "Installing product key '$ProductKey'..."
 			$null = $licensingService.InstallProductKey($ProductKey)
 
+		} catch [System.Runtime.InteropServices.COMException] {
+			$errorCode = $_.Exception.ErrorCode
+
+			switch ($errorCode) {
+				'-1073418203' {
+					Write-Log -Message "[Error] The action requires administrator privileges."
+					break
+				}
+				'-1073418160' {
+					Write-Log -Message "[Error] The product key is invalid."
+					break
+				}
+				Default {
+					Write-Log -Message "[Error] The product key has failed to install ($errorCode)."
+				}
+			}
+
+			Exit 10
+
 		} catch {
-			Write-Log -Message "[Error] The product key has failed to install."
+			Write-Log -Message "[Error] The product key has failed to install: $_"
 			Exit 10
 		}
+
 	}
 
 	# Activate product
@@ -195,21 +223,39 @@ function Uninstall-ProductKey {
 	try {
 		# Uninstall product key.
 		$null = $licensingProduct.UninstallProductKey()
-		Write-Log -Message "The product key has been successfully uninstalled."
-		Update-LicenseStatus
-		Exit 0
+
+	} catch [System.Runtime.InteropServices.COMException] {
+		$errorCode = $_.Exception.ErrorCode
+
+		switch ($errorCode) {
+			'-1073418203' {
+				Write-Log -Message "[Error] The action requires administrator privileges."
+				break
+			}
+			Default {
+				Write-Log -Message "[Error] The product key has failed to uninstall ($errorCode)."
+			}
+		}
+
+		Exit 50
 
 	} catch {
-		Write-Log -Message "[Error] The product key has failed to uninstall."
+		Write-Log -Message "[Error] The product key has failed to uninstall: $_"
 		Exit 50
 	}
+
+	Write-Log -Message "The product key has been successfully uninstalled."
+	Update-LicenseStatus
+	Exit 0
 }
 
 function Update-LicenseStatus {
+
+	$licensingService = $null
+	$licensingService = Get-WmiObject -Query ('SELECT Version FROM SoftwareLicensingService')
+	# Refresh Windows licensing state.
+
 	try {
-		$licensingService = $null
-		$licensingService = Get-WmiObject -Query ('SELECT Version FROM SoftwareLicensingService')
-		# Refresh Windows licensing state.
 		$null = $licensingService.RefreshLicenseStatus()
 
 	} catch {
@@ -225,14 +271,21 @@ function Enable-Product {
 	# Retrieve product information.
 	Write-Log -Message "Retrieving product information..."
 	$licensingProduct = $null
-	$licensingProduct = Get-WmiObject -Query ('SELECT ID, Name, OfflineInstallationId, ProductKeyID FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
+	$licensingProduct = Get-WmiObject -Query ('SELECT ID, Name, Description, OfflineInstallationId, ProductKeyID FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
 
 	if (-not $licensingProduct) {
 		Write-Log -Message "[Error] The product with product key '$ProductKey' could not be found."
 		Exit 11
 	}
 
+	if ($licensingProduct.Description.Contains("KMS")) {
+		Write-Log -Message "[Error] The product '$($licensingProduct.Description)' is not supported for activation."
+		Update-LicenseStatus
+		Exit 14
+	}
+
 	Write-Log -Message "Name             : $($licensingProduct.Name)"
+	Write-Log -Message "Description      : $($licensingProduct.Description)"
 	Write-Log -Message "Installation ID  : $($licensingProduct.OfflineInstallationId)"
 	Write-Log -Message "Activation ID    : $($licensingProduct.ID)"
 	Write-Log -Message "Extd. Product ID : $($licensingProduct.ProductKeyID)"
@@ -243,13 +296,36 @@ function Enable-Product {
 
 	# Activate the product by depositing the Confirmation ID.
 	Write-Log -Message "Activating product..."
+
 	try {
-		# Activate product with provided Confirmation ID.
 		$null = $licensingProduct.DepositOfflineConfirmationId($licensingProduct.OfflineInstallationId, $confirmationId)
 
+	} catch [System.Runtime.InteropServices.COMException] {
+		$errorCode = $_.Exception.ErrorCode
+
+		switch ($errorCode) {
+			'-1073418203' {
+				Write-Log -Message "[Error] The action requires administrator privileges."
+				break
+			}
+			'-1073418163' {
+				Write-Log -Message "[Error] The Installation ID (IID) or the Confirmation ID (CID) is invalid."
+				break
+			}
+			'-1073418191' {
+				Write-Log -Message "[Error] The Installation ID (IID) and the Confirmation ID (CID) do not match."
+				break
+			}
+			Default {
+				Write-Log -Message "[Error] Failed to deposit the Confirmation ID. The product was not activated ($errorCode)."
+			}
+		}
+
+		Exit 13
+
 	} catch {
-		Write-Log -Message "[Error] Failed to deposit the Confirmation ID. The product was not activated."
-		Exit 14
+		Write-Log -Message "[Error] Failed to deposit the Confirmation ID. The product was not activated: $_"
+		Exit 13
 	}
 
 	Update-LicenseStatus
@@ -332,7 +408,7 @@ function Invoke-WebService {
 			}
 
 		} catch {
-			Write-Log -Message "[Error] Exception calling 'CallWebService': $_"
+			Write-Log -Message "[Error] Exception calling 'Invoke-WebService': $_"
 			Exit 21
 		}
 	}
