@@ -44,7 +44,7 @@
 
 .NOTES
     Filename:    Activate-Product.ps1
-    Version:     0.18.0
+    Version:     0.18.1
     Author:      Daniel Dorner
     Date:        06/21/2020
 
@@ -72,9 +72,9 @@ param
 		ValueFromPipelineByPropertyName = $true,
 		HelpMessage = 'Please enter the URL of the ActivationWs web service, eg. "https://server.domain.name/ActivationWs.asmx"')]
 	[ValidateScript({
-		$uri = [System.URI]$_
-		if($uri.AbsoluteURI -ne $null -and $uri.Scheme -match '^https?$' -and $uri.AbsoluteURI.EndsWith(".asmx")) {
-			$true
+		$uri = [uri]$_
+		if($uri.Scheme -match '^https?$' -and $uri.AbsoluteURI.EndsWith(".asmx")) {
+			return $true
 		} else {
 			throw 'Please enter the URL of the ActivationWs web service, eg. "https://server.domain.name/ActivationWs.asmx"'
 		}
@@ -99,7 +99,7 @@ param
 	[string]$LogFile = "$env:TEMP\Activate-Product.log"
 )
 
-$script:scriptVersion = "0.18.0"
+$script:scriptVersion = "0.18.1"
 $script:fullyQualifiedHostName = [System.Net.Dns]::GetHostByName($env:COMPUTERNAME).HostName
 $script:logInitialized = $false
 
@@ -253,8 +253,8 @@ function Update-LicenseStatus {
 
 	$licensingService = $null
 	$licensingService = Get-WmiObject -Query ('SELECT Version FROM SoftwareLicensingService')
-	# Refresh Windows licensing state.
 
+	# Refresh Windows licensing state.
 	try {
 		$null = $licensingService.RefreshLicenseStatus()
 
