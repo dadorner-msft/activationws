@@ -49,9 +49,16 @@
 </head>
 <body>
     <p class="header">ActivationWs</p>
-    <p>Use this page if you need to acquire a Confirmation ID from the Microsoft licensing servers.</p>
+    <p>Use this page to perform a manual MAK activation or to check your remaining MAK activation count.</p>
     <form id="form1" runat="server">
-        <p>Acquire a Confirmation ID</p>
+        <asp:RadioButtonList ID="RadioButtonList1"
+            AutoPostBack="True"
+            RepeatDirection="Horizontal"
+            runat="server">
+            <asp:ListItem Selected="True">Acquire Confirmation ID</asp:ListItem>
+            <asp:ListItem>Retrieve remaining activation count</asp:ListItem>
+        </asp:RadioButtonList>
+        <br />
         <table>
             <tr>
                 <td>Installation ID: </td>
@@ -62,8 +69,9 @@
                     <asp:RegularExpressionValidator ID="RegularExpressionValidatorIId"
                         ControlToValidate="InstallationId" runat="server"
                         ErrorMessage="!"
-                        ValidationExpression="^[0-9]{54,}$"
-                        ForeColor="Red" >
+                        ForeColor="Red"
+                        SetFocusOnError="True"
+                        ValidationExpression="^[0-9]{54,}$">
                     </asp:RegularExpressionValidator>
                 </td>
             </tr>
@@ -76,8 +84,9 @@
                     <asp:RegularExpressionValidator ID="RegularExpressionValidatorPId"
                         ControlToValidate="ExtendedProductId" runat="server"
                         ErrorMessage="!"
-                        ValidationExpression="^[0-9]{5}-[0-9]{5}-[0-9]{3}-[0-9]{6}-[0-9]{2}-[0-9]{4}-[0-9]{4}.[0-9]{4}-[0-9]{7}$"
-                        ForeColor="Red" >
+                        ForeColor="Red"
+                        SetFocusOnError="True"
+                        ValidationExpression="^[0-9]{5}-[0-9]{5}-[0-9]{3}-[0-9]{6}-[0-9]{2}-[0-9]{4}-[0-9]{4,5}.[0-9]{4}-[0-9]{7}$">
                     </asp:RegularExpressionValidator>
                 </td>
             </tr>
@@ -89,18 +98,32 @@
         <asp:Button ID="Submit" runat="server" Text="Submit" OnClick="Submit_Click" TabIndex="3" CssClass="button" />
     </form>
     <br />
-    <p class="footer">Find ActivationWs on <a href="https://github.com/dadorner-msft/activationws" target="_blank">GitHub</a></p>
+    <p class="footer"><a href="https://github.com/dadorner-msft/ActivationWs/releases" target="_blank">Find ActivationWs on GitHub</a>&nbsp;&nbsp;&#124;&nbsp;&nbsp; Version <%= typeof(ActivationHelper).Assembly.GetName().Version.ToString() %></p>
+    
     <script runat="server">
+
+        void Page_Load(Object sender, EventArgs e) {
+            if (RadioButtonList1.SelectedIndex == 0) {
+                InstallationId.Enabled = true;
+            } else {
+                InstallationId.Enabled = false;
+            }
+        }
+
         public void Submit_Click(Object sender, EventArgs E) {
             try {
-                if(!((InstallationId.Text == "") || (ExtendedProductId.Text == ""))) {
-                    ActivationService activationService = new ActivationService();
-                    Result.Text = "The Confirmation ID is: <b>" +  activationService.AcquireConfirmationId(InstallationId.Text, ExtendedProductId.Text) + "</b>.";
+                ActivationService activationService = new ActivationService();
+
+                if (RadioButtonList1.SelectedIndex == 0 && !((InstallationId.Text == "") || (ExtendedProductId.Text == "")))  {
+                    Result.Text = string.Format("The Confirmation ID is: <b>{0}</b>", activationService.AcquireConfirmationId(InstallationId.Text, ExtendedProductId.Text));
+                }  else if (RadioButtonList1.SelectedIndex == 1 && !(ExtendedProductId.Text == "")) {
+                    Result.Text = string.Format("You have <b>{0}</b> activations left.", activationService.RetrieveActivationCount(ExtendedProductId.Text));
                 } else {
-                    Result.Text = "Please enter a Confirmation ID and Extended Product ID.";
+                    Result.Text = "Please fill in all required fields and try again.";
                 }
+
             } catch (Exception ex) {
-                Result.Text = "The Confirmation ID could not be retrieved (" + ex.Message + ")";
+                Result.Text = string.Format("The data could not be retrieved. {0}.", ex.Message);
             }
         }
     </script>
