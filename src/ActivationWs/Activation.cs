@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using System.Web;
-using System.Xml;
+using System.Xml.Linq;
+
 
 namespace ActivationWs
 {
@@ -24,12 +23,20 @@ namespace ActivationWs
         };
 
         private const string Action = "http://www.microsoft.com/BatchActivationService/BatchActivate";
+
         private static readonly Uri Uri = new Uri("https://activation.sls.microsoft.com/BatchActivation/BatchActivation.asmx");
 
-        public static string CallWebService(string installationId, string extendedProductId) {
-            XmlDocument soapRequest = CreateSoapRequest(installationId, extendedProductId);
+        private static readonly XNamespace SoapSchemaNs = "http://schemas.xmlsoap.org/soap/envelope/";
+        private static readonly XNamespace XmlSchemaInstanceNs = "http://www.w3.org/2001/XMLSchema-instance";
+        private static readonly XNamespace XmlSchemaNs = "http://www.w3.org/2001/XMLSchema";
+        private static readonly XNamespace BatchActivationServiceNs = "http://www.microsoft.com/BatchActivationService";
+        private static readonly XNamespace BatchActivationRequestNs = "http://www.microsoft.com/DRM/SL/BatchActivationRequest/1.0";
+        private static readonly XNamespace BatchActivationResponseNs = "http://www.microsoft.com/DRM/SL/BatchActivationResponse/1.0";
+
+        public static string CallWebService(int requestType, string installationId, string extendedProductId) {
+            XDocument soapRequest = CreateSoapRequest(requestType, installationId, extendedProductId);
             HttpWebRequest webRequest = CreateWebRequest(soapRequest);
-            XmlDocument soapResponse = new XmlDocument();
+            XDocument soapResponse = new XDocument();
 
             try {
                 IAsyncResult asyncResult = webRequest.BeginGetResponse(null, null);
@@ -38,59 +45,60 @@ namespace ActivationWs
                 // Read data from the response stream.
                 using (WebResponse webResponse = webRequest.EndGetResponse(asyncResult))
                 using (StreamReader streamReader = new StreamReader(webResponse.GetResponseStream())) {
-                    soapResponse.LoadXml(streamReader.ReadToEnd());
+                    soapResponse = XDocument.Parse(streamReader.ReadToEnd());
                 }
 
             } catch (Exception ex) {
-                throw new Exception("Exception calling 'CallWebservice': " + ex.Message);
+                throw new Exception(ex.Message);
             }
 
             return ParseSoapResponse(soapResponse);
         }
 
-        private static XmlDocument CreateSoapRequest(string installationId, string extendedProductId) {
-            // Create an activation request string.
-            string activationRequest =
-                "<ActivationRequest xmlns =\"http://www.microsoft.com/DRM/SL/BatchActivationRequest/1.0\">" +
-                    "<VersionNumber>2.0</VersionNumber>" +
-                    "<RequestType>1</RequestType>" +
-                    "<Requests>" +
-                        "<Request>" +
-                            "<PID>" + extendedProductId + "</PID>" +
-                            "<IID>" + installationId + "</IID>" +
-                        "</Request>" +
-                    "</Requests>" +
-                "</ActivationRequest>";
+        private static XDocument CreateSoapRequest(int requestType, string installationId, string extendedProductId) {
+            // Create an activation request.           
+            XElement activationRequest = new XElement(BatchActivationRequestNs + "ActivationRequest",
+                new XElement(BatchActivationRequestNs + "VersionNumber", "2.0"),
+                new XElement(BatchActivationRequestNs + "RequestType", requestType),
+                new XElement(BatchActivationRequestNs + "Requests",
+                    new XElement(BatchActivationRequestNs + "Request",
+                        new XElement(BatchActivationRequestNs + "PID", extendedProductId),
+                        requestType == 1 ? new XElement(BatchActivationRequestNs + "IID", installationId) : null)
+                )
+            );
 
             // Get the unicode byte array of activationRequest and convert it to Base64.
-            byte[] bytes = Encoding.Unicode.GetBytes(activationRequest);
+            byte[] bytes = Encoding.Unicode.GetBytes(activationRequest.ToString());
             string requestXml = Convert.ToBase64String(bytes);
 
-            XmlDocument soapRequest = new XmlDocument();
+            XDocument soapRequest = new XDocument();
 
             using (HMACSHA256 hMACSHA = new HMACSHA256(MacKey)) {
                 // Convert the HMAC hashed data to Base64.
                 string digest = Convert.ToBase64String(hMACSHA.ComputeHash(bytes));
 
-                soapRequest.LoadXml(
-                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
-                        "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">" +
-                        "<soap:Body>" +
-                            "<BatchActivate xmlns=\"http://www.microsoft.com/BatchActivationService\">" +
-                                "<request>" +
-                                    "<Digest>" + digest + "</Digest>" +
-                                    "<RequestXml>" + requestXml + "</RequestXml>" +
-                                "</request>" +
-                            "</BatchActivate>" +
-                        "</soap:Body>" +
-                    "</soap:Envelope>"
-                );
+                soapRequest = new XDocument(
+                new XDeclaration("1.0", "UTF-8", "no"),
+                new XElement(SoapSchemaNs + "Envelope",
+                    new XAttribute(XNamespace.Xmlns + "soap", SoapSchemaNs),
+                    new XAttribute(XNamespace.Xmlns + "xsi", XmlSchemaInstanceNs),
+                    new XAttribute(XNamespace.Xmlns + "xsd", XmlSchemaNs),
+                    new XElement(SoapSchemaNs + "Body",
+                        new XElement(BatchActivationServiceNs + "BatchActivate",
+                            new XElement(BatchActivationServiceNs + "request",
+                                new XElement(BatchActivationServiceNs + "Digest", digest),
+                                new XElement(BatchActivationServiceNs + "RequestXml", requestXml)
+                            )
+                        )
+                    )
+                ));
+
             }
 
             return soapRequest;
         }
 
-        private static HttpWebRequest CreateWebRequest(XmlDocument soapRequest) {
+        private static HttpWebRequest CreateWebRequest(XDocument soapRequest) {
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(Uri);
             webRequest.Accept = "text/xml";
             webRequest.ContentType = "text/xml; charset=\"utf-8\"";
@@ -104,44 +112,62 @@ namespace ActivationWs
                 }
 
             } catch (Exception ex) {
-                throw new Exception("Exception calling 'CreateWebRequest': " + ex.Message);
+                throw new Exception(ex.Message);
             }
 
             return webRequest;
         }
 
-        private static string ParseSoapResponse(XmlDocument soapResponse) {
+        private static string ParseSoapResponse(XDocument soapResponse) {
             try {
-                XmlNamespaceManager xmlNsManager = new XmlNamespaceManager(soapResponse.NameTable);
-                xmlNsManager.AddNamespace("soap", "http://schemas.xmlsoap.org/soap/envelope/");
-                xmlNsManager.AddNamespace("msbas", "http://www.microsoft.com/BatchActivationService");
-                xmlNsManager.AddNamespace("msbar", "http://www.microsoft.com/DRM/SL/BatchActivationResponse/1.0");
+                if (soapResponse == null) {
+                    throw new ArgumentNullException("The remote server returned an unexpected response.");
+                }
 
-                string responseXmlString = soapResponse.SelectSingleNode("/soap:Envelope/soap:Body/msbas:BatchActivateResponse/msbas:BatchActivateResult/msbas:ResponseXml", xmlNsManager).InnerText;
+                XDocument responseXml = XDocument.Parse(soapResponse.Descendants(BatchActivationServiceNs + "ResponseXml").First().Value);
 
-                XmlDocument responseXml = new XmlDocument();
-                responseXml.LoadXml(responseXmlString);
+                if (responseXml.Descendants(BatchActivationResponseNs + "ErrorCode").Any()) {
+                    string errorCode = responseXml.Descendants(BatchActivationResponseNs + "ErrorCode").First().Value;
 
-                if (responseXml.SelectSingleNode("//msbar:CID", xmlNsManager) != null) {
-                    string confirmationId = responseXml.SelectSingleNode("//msbar:CID", xmlNsManager).InnerText;
-                    return confirmationId;
+                    switch (errorCode) {
+                        case "0x7F":
+                            throw new Exception("The Multiple Activation Key has exceeded its limit");
 
-                } else if (responseXml.SelectSingleNode("//msbar:ErrorCode", xmlNsManager) != null) {
-                    string errorCode = responseXml.SelectSingleNode("//msbar:ErrorCode", xmlNsManager).InnerText;
-                    
-                    if (responseXml.SelectSingleNode("//msbar:ActivationRemaining", xmlNsManager) != null) {
-                        int remainingActivations = Convert.ToInt32(responseXml.SelectSingleNode("//msbar:ActivationRemaining", xmlNsManager).InnerText);
-                        throw new Exception("The Confirmation ID could not be retrieved (" + errorCode + "). Remaining MAK activation count: " + remainingActivations);
+                        case "0x67":
+                            throw new Exception("The MAK has been blocked");
+
+                        case "0x86":
+                            throw new Exception("Invalid license type.");
+
+                        case "0x90":
+                            throw new Exception("Please check the Installation ID and try again");
+
+                        default:
+                            throw new Exception(string.Format("The remote server reported an error ({0})", errorCode));
                     }
 
-                    throw new Exception("The Confirmation ID could not be retrieved (" + errorCode + ")");
+                } else if (responseXml.Descendants(BatchActivationResponseNs + "ResponseType").Any()) {
+                    int responseType = Convert.ToInt32(responseXml.Descendants(BatchActivationResponseNs + "ResponseType").First().Value);
+
+                    switch (responseType) {
+                        case 1:
+                            string confirmationId = responseXml.Descendants(BatchActivationResponseNs + "CID").First().Value;
+                            return confirmationId;
+
+                        case 2:
+                            string activationsRemaining = responseXml.Descendants(BatchActivationResponseNs + "ActivationRemaining").First().Value;
+                            return activationsRemaining;
+
+                        default:
+                            throw new Exception("The remote server returned an unrecognized response.");
+                    }
 
                 } else {
-                    throw new Exception("The SOAP response could not be parsed.");
+                    throw new Exception("The remote server returned an unrecognized response.");
                 }
 
             } catch (Exception ex) {
-                throw new Exception("Exception calling 'ParseSoapResponse': " + ex.Message);
+                throw new Exception(ex.Message);
             }
         }
     }
