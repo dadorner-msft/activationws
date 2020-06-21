@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
 using System.Web.Services;
 
 namespace ActivationWs
@@ -18,10 +15,16 @@ namespace ActivationWs
     {
 
         [WebMethod]
-        public string AcquireConfirmationId(string installationId, string extendedProductId)
-        {
-            string confirmationId = ActivationHelper.CallWebService(installationId, extendedProductId);
+        public string AcquireConfirmationId(string installationId, string extendedProductId) {
+            string confirmationId = ActivationHelper.CallWebService(1, installationId, extendedProductId);
             return confirmationId;
         }
+
+        [WebMethod]
+        public int RetrieveActivationCount(string extendedProductId) {
+            int remainingActivationCount = Convert.ToInt32(ActivationHelper.CallWebService(2, null, extendedProductId));
+            return remainingActivationCount;
+        }
+
     }
 }
