@@ -77,19 +77,18 @@ ActivationWs web service requires access to the URL listed in the [requirement](
 
 Please take a look at [this blog article](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#), which outlines the available updates to verify the deployment.
 
-**Activate-Product.ps1 fails with "[Error] Failed to install the product key."**
+**Activate-Product.ps1 fails with "[Error] The product key is invalid"**
 
 - Check your product key
-- Run the PowerShell script `Activate-License.ps1` as administrator
 - For the deployment of ESU licenses only: ensure that all of the [prerequisites](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#) are installed on your ESU eligible device
 
-If it fails even though you followed these steps, please run `slmgr.vbs /ipk <product key>` and check the result.
+If it fails even though you followed these steps, please take a look at the following support article: [How to rebuild the Tokens.dat file when you troubleshoot Windows activation issues](https://support.microsoft.com/en-us/help/2736303).
 
-**Activate-Product.ps1 fails with "[Error] Product activation failed (3221549105)."**
+**Activate-Product.ps1 fails with "[Error] The Installation ID (IID) and the Confirmation ID (CID) do not match" or "[Error] Product activation failed (3221549105)"**
 
 For the deployment of ESU licenses only: ensure that all of the [prerequisites](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#) are installed on your ESU eligible device
 
-**Activate-Product.ps1 fails with "[Warning] The remote server returned an error: (500) Internal Server Error.**
+**Activate-Product.ps1 fails with "[Warning] The remote server returned an error: (500) Internal Server Error"**
 
 This is a "server-side" error, meaning that the ActivationWs web service couldn't acquire the Confirmation Id. Reasons include:
 - The ActivationWs web service couldn't connect to the [required URL](#requirements)
