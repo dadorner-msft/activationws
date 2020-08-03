@@ -48,11 +48,11 @@ namespace ActivationWs
                     soapResponse = XDocument.Parse(streamReader.ReadToEnd());
                 }
 
-            } catch (Exception ex) {
-                throw new Exception(ex.Message);
-            }
+                return ParseSoapResponse(soapResponse);
 
-            return ParseSoapResponse(soapResponse);
+            } catch {
+                throw;
+            }
         }
 
         private static XDocument CreateSoapRequest(int requestType, string installationId, string extendedProductId) {
@@ -111,19 +111,23 @@ namespace ActivationWs
                     soapRequest.Save(stream);
                 }
 
-            } catch (Exception ex) {
-                throw new Exception(ex.Message);
-            }
+                return webRequest;
 
-            return webRequest;
+            } catch {
+                throw;
+            }
         }
 
         private static string ParseSoapResponse(XDocument soapResponse) {
-            try {
-                if (soapResponse == null) {
-                    throw new ArgumentNullException("The remote server returned an unexpected response.");
-                }
+            if (soapResponse == null) {
+                throw new ArgumentNullException(nameof(soapResponse), "The remote server returned an unexpected response.");
+            }
 
+            if (!soapResponse.Descendants(BatchActivationServiceNs + "ResponseXml").Any()) {
+                throw new Exception("The remote server returned an unexpected response");
+            }
+
+            try {
                 XDocument responseXml = XDocument.Parse(soapResponse.Descendants(BatchActivationServiceNs + "ResponseXml").First().Value);
 
                 if (responseXml.Descendants(BatchActivationResponseNs + "ErrorCode").Any()) {
@@ -134,10 +138,13 @@ namespace ActivationWs
                             throw new Exception("The Multiple Activation Key has exceeded its limit");
 
                         case "0x67":
-                            throw new Exception("The MAK has been blocked");
+                            throw new Exception("The product key has been blocked");
+
+                        case "0x68":
+                            throw new Exception("Invalid product key");
 
                         case "0x86":
-                            throw new Exception("Invalid license type.");
+                            throw new Exception("Invalid key type");
 
                         case "0x90":
                             throw new Exception("Please check the Installation ID and try again");
@@ -147,27 +154,27 @@ namespace ActivationWs
                     }
 
                 } else if (responseXml.Descendants(BatchActivationResponseNs + "ResponseType").Any()) {
-                    int responseType = Convert.ToInt32(responseXml.Descendants(BatchActivationResponseNs + "ResponseType").First().Value);
+                    string responseType = responseXml.Descendants(BatchActivationResponseNs + "ResponseType").First().Value;
 
                     switch (responseType) {
-                        case 1:
+                        case "1":
                             string confirmationId = responseXml.Descendants(BatchActivationResponseNs + "CID").First().Value;
                             return confirmationId;
 
-                        case 2:
+                        case "2":
                             string activationsRemaining = responseXml.Descendants(BatchActivationResponseNs + "ActivationRemaining").First().Value;
                             return activationsRemaining;
 
                         default:
-                            throw new Exception("The remote server returned an unrecognized response.");
+                            throw new Exception("The remote server returned an unrecognized response");
                     }
 
                 } else {
-                    throw new Exception("The remote server returned an unrecognized response.");
+                    throw new Exception("The remote server returned an unrecognized response");
                 }
 
-            } catch (Exception ex) {
-                throw new Exception(ex.Message);
+            } catch {
+                throw;
             }
         }
     }
