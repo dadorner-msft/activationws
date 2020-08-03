@@ -99,33 +99,5 @@
     </form>
     <br />
     <p class="footer"><a href="https://github.com/dadorner-msft/ActivationWs/releases" target="_blank">Find ActivationWs on GitHub</a>&nbsp;&nbsp;&#124;&nbsp;&nbsp; Version <%= typeof(ActivationHelper).Assembly.GetName().Version.ToString() %></p>
-    
-    <script runat="server">
-
-        void Page_Load(Object sender, EventArgs e) {
-            if (RadioButtonList1.SelectedIndex == 0) {
-                InstallationId.Enabled = true;
-            } else {
-                InstallationId.Enabled = false;
-            }
-        }
-
-        public void Submit_Click(Object sender, EventArgs E) {
-            try {
-                ActivationService activationService = new ActivationService();
-
-                if (RadioButtonList1.SelectedIndex == 0 && !((InstallationId.Text == "") || (ExtendedProductId.Text == "")))  {
-                    Result.Text = string.Format("The Confirmation ID is: <b>{0}</b>", activationService.AcquireConfirmationId(InstallationId.Text, ExtendedProductId.Text));
-                }  else if (RadioButtonList1.SelectedIndex == 1 && !(ExtendedProductId.Text == "")) {
-                    Result.Text = string.Format("You have <b>{0}</b> activations left.", activationService.RetrieveActivationCount(ExtendedProductId.Text));
-                } else {
-                    Result.Text = "Please fill in all required fields and try again.";
-                }
-
-            } catch (Exception ex) {
-                Result.Text = string.Format("The data could not be retrieved. {0}.", ex.Message);
-            }
-        }
-    </script>
 </body>
 </html>
