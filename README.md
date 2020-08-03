@@ -1,20 +1,11 @@
-# ActivationWs
+<img src="./doc/images/ActivationWs_logo_with_text.png" width="400"/>
 
-# Table of Contents
-<!-- toc -->
-- [Introduction](#introduction)
-- [Requirements](#requirements)
-- [Installation and Usage](#installation-and-usage)
-- [FAQ](#faq)
-- [Contributions are welcome](#contributions-are-welcome)
-- [Code of Conduct](#code-of-conduct)
-- [Disclaimer](#disclaimer)
-
-## Introduction
-
+## Overview
 Welcome to the ActivationWs GitHub repository!
 
 ActivationWs is a customizable solution that allows you to automate the Multiple Activation Key (MAK) activation process for Windows, Office, and other Microsoft products (eg. Extended Security Update (ESU)).
+
+[Requirements](#requirements) | [Installation and Usage](#installation-and-usage) | [FAQ](#faq) | [Contribution](#contributions-are-welcome) | [Code of Conduct](#code-of-conduct) | [Disclaimer](#disclaimer)
 
 ### How does ActivationWs work and how does it benefit you?
 
@@ -34,14 +25,14 @@ ActivationWs includes an ASP.NET web service and a PowerShell script to install 
 - Easy to implement, time-saving, allows you to ensure business goals are realized, manages risks and delivers business value
 - Customizable and addresses privacy concerns, given the fact that the source code is available to the public
 
-[Back to ToC](#table-of-contents)
+[Back to Overview](#overview)
 
 ## Requirements
 - ActivationWs web service runs on IIS and requires the .NET Framework 4.6 and ASP.NET modules
 - The web service requires access to the Microsoft BatchActivation Service (`https://activation.sls.microsoft.com`). A proxy server can be specified in the web.config file, where necessary
 - `Activate-Product.ps1` requires Windows PowerShell v2.0 or later and needs to be executed with administrative rights
 
-[Back to ToC](#table-of-contents)
+[Back to Overview](#overview)
 
 ## Installation and Usage
 
@@ -63,7 +54,7 @@ ActivationWs also supports you in the activation process of air-gapped devices.
 
 ![manual-cid-retrieval](https://github.com/dadorner-msft/activationws/blob/master/doc/images/manual-cid-retrieval.png)
 
-[Back to ToC](#table-of-contents)
+[Back to Overview](#overview)
 
 ## FAQ
 
@@ -90,7 +81,7 @@ For the deployment of ESU licenses only: ensure that all of the [prerequisites](
 
 **Activate-Product.ps1 fails with "[Warning] The remote server returned an error: (500) Internal Server Error"**
 
-This is a "server-side" error, meaning that the ActivationWs web service couldn't acquire the Confirmation Id. Reasons include:
+This is a "server-side" error, meaning that the ActivationWs web service couldn't acquire the Confirmation ID. Reasons include:
 - The ActivationWs web service couldn't connect to the [required URL](#requirements)
 - No MAK activations are left on your product key
 - The specified WebServiceUrl is incorrect
@@ -105,7 +96,7 @@ $productKey = $tsEnv.Value("PKEY")
 ```
 This would prevent the product key from showing up in the ConfigMgr log files.
 
-[Back to ToC](#table-of-contents)
+[Back to Overview](#overview)
 
 ## Contributions are welcome
 
@@ -116,7 +107,7 @@ There are many ways to contribute:
 3. Submit your own fixes or features as a pull request but please discuss it beforehand in an issue if the change is substantial.
 4. Submit test cases.
 
-[Back to ToC](#table-of-contents)
+[Back to Overview](#overview)
 
 ## Code of Conduct
 
@@ -126,10 +117,10 @@ This project has adopted the [Microsoft Open Source Code of Conduct][conduct-cod
 [conduct-FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
 [conduct-email]: mailto:opencode@microsoft.com
 
-[Back to ToC](#table-of-contents)
+[Back to Overview](#overview)
 
 ## Disclaimer
 
 This script code is provided "as is", with no guarantee or warranty concerning the usability or impact on systems and may be used, distributed, and modified in any way provided the parties agree and acknowledge the Microsoft or Microsoft Partners have neither accountability or responsibility for results produced by use of this script.
 
-[Back to ToC](#table-of-contents)
+[Back to Overview](#overview)
