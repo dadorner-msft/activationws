@@ -103,6 +103,7 @@ namespace ActivationWs
             webRequest.Accept = "text/xml";
             webRequest.ContentType = "text/xml; charset=\"utf-8\"";
             webRequest.Headers.Add("SOAPAction", Action);
+            webRequest.Host = "activation.sls.microsoft.com";
             webRequest.Method = "POST";
 
             try {
