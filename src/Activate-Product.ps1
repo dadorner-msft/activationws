@@ -37,16 +37,16 @@
     Specifies the full path to the log file.
 
 .EXAMPLE
-    ./Activate-Product.ps1 -ProductKey XXXXX-XXXXX-XXXXX-XXXXX-XXXXX -WebServiceUrl http://client1:8081/activationws.asmx -MaximumRetryCount 5 -RetryIntervalSec 40
+    .\Activate-Product.ps1 -ProductKey XXXXX-XXXXX-XXXXX-XXXXX-XXXXX -WebServiceUrl http://client1:8081/activationws.asmx -MaximumRetryCount 5 -RetryIntervalSec 40
 
 .EXAMPLE
-    ./Activate-Product.ps1 -ProductKey XXXXX-XXXXX-XXXXX-XXXXX-XXXXX -Uninstall -LogFile C:\logs\activation.log
+    .\Activate-Product.ps1 -ProductKey XXXXX-XXXXX-XXXXX-XXXXX-XXXXX -Uninstall -LogFile C:\logs\activation.log
 
 .NOTES
     Filename:    Activate-Product.ps1
-    Version:     0.18.1
+    Version:     0.18.2
     Author:      Daniel Dorner
-    Date:        06/21/2020
+    Date:        09/29/2020
 
     This  script  code  is  provided  "as  is",  with  no guarantee or warranty
     concerning the usability or impact on systems and may be used, distributed,
