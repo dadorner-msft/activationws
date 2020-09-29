@@ -21,8 +21,8 @@ namespace ActivationWs
         }
 
         [WebMethod]
-        public int RetrieveActivationCount(string extendedProductId) {
-            int remainingActivationCount = Convert.ToInt32(ActivationHelper.CallWebService(2, null, extendedProductId));
+        public string RetrieveActivationCount(string extendedProductId) {
+            string remainingActivationCount = ActivationHelper.CallWebService(2, null, extendedProductId);
             return remainingActivationCount;
         }
 
