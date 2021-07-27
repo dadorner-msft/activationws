@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-    To install and activate or to uninstall a product key
+    To install, activate or to uninstall a product key.
 
 .DESCRIPTION
-    This script can be used to install and activate or to uninstall a Multiple Activation Key (MAK)
+    This script can be used to install, activate or to uninstall a product key.
 
     Exit Codes:  0   Success
                  1   Unknown error
@@ -44,9 +44,9 @@
 
 .NOTES
     Filename:    Activate-Product.ps1
-    Version:     0.18.2
+    Version:     0.19.3
     Author:      Daniel Dorner
-    Date:        09/29/2020
+    Date:        10/30/2020
 
     This  script  code  is  provided  "as  is",  with  no guarantee or warranty
     concerning the usability or impact on systems and may be used, distributed,
@@ -91,6 +91,9 @@ param
 	[ValidateRange(0, 2147483647)]
 	[int]$RetryIntervalSec = 30,
 
+	[Parameter(ParameterSetName = 'skipactivation')]
+	[switch]$SkipActivation,
+
 	[Parameter(ParameterSetName = 'uninstall')]
 	[switch]$Uninstall,
 
@@ -99,7 +102,7 @@ param
 	[string]$LogFile = "$env:TEMP\Activate-Product.log"
 )
 
-$script:scriptVersion = "0.18.1"
+$script:scriptVersion = "0.19.3"
 $script:fullyQualifiedHostName = [System.Net.Dns]::GetHostByName($env:COMPUTERNAME).HostName
 $script:logInitialized = $false
 
@@ -122,17 +125,17 @@ function Write-Log {
 		}
 
 		foreach ($line in $Message) {
-			Write-Host $line
+			Write-Output $line
 			$line = "{0}; {1}" -f $timestamp, $line
 			$line | Out-File -FilePath $LogFile -Append -Force
 		}
 
 	} catch [System.IO.DirectoryNotFoundException], [System.UnauthorizedAccessException], [System.IO.IOException], [System.Management.Automation.DriveNotFoundException] {
 		$script:LogFile = "$env:TEMP\Activate-Product.log"
-		Write-Host "[Warning] $_ The output would be redirected to `'$LogFile`'."
+		Write-Output "[Warning] $_ The output would be redirected to `'$LogFile`'."
 
 	} catch {
-		Write-Host  "[Error] Exception calling 'Write-Log': $_"
+		Write-Output  "[Error] Exception calling 'Write-Log': $_"
 		Exit 30
 	}
 }
@@ -149,6 +152,11 @@ function Install-ProductKey {
 	# Check if product key is installed and activated.
 	if ($licensingProduct) {
 		# Product key is installed.
+		if ($SkipActivation) {
+			Write-Log -Message "The product with product key '$ProductKey' is already installed."
+			Exit 0
+		}
+
 		if ($licensingProduct.LicenseStatus -eq 1) {
 			# Product is activated.
 			Write-Log -Message "The product with product key '$ProductKey' is already activated."
@@ -177,6 +185,10 @@ function Install-ProductKey {
 					Write-Log -Message "[Error] The action requires administrator privileges."
 					break
 				}
+				'-1073418135' {
+					Write-Log -Message "[Error] The product SKU is not found."
+					break
+				}
 				'-1073418160' {
 					Write-Log -Message "[Error] The product key is invalid."
 					break
@@ -191,6 +203,19 @@ function Install-ProductKey {
 		} catch {
 			Write-Log -Message "[Error] The product key has failed to install: $_"
 			Exit 10
+		}
+
+		if ($SkipActivation) {
+			Write-Log -Message "The product with product key '$ProductKey' has been successfully installed."
+			Exit 0
+		}
+
+		# Check whether the product has already been activated by a previous installation (the licensing state is not discarded after a product has been uninstalled).
+		$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
+		if ($licensingProduct.LicenseStatus -eq 1) {
+			# Product is activated.
+			Write-Log -Message "The product with product key '$ProductKey' is already activated."
+			Exit 0
 		}
 
 	}
@@ -281,7 +306,7 @@ function Enable-Product {
 	if ($licensingProduct.Description.Contains("KMS")) {
 		Write-Log -Message "[Error] The product '$($licensingProduct.Description)' is not supported for activation."
 		Update-LicenseStatus
-		Exit 14
+		Exit 15
 	}
 
 	Write-Log -Message "Name             : $($licensingProduct.Name)"
