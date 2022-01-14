@@ -13,7 +13,6 @@
                  15  Product is not supported for activation
                  20  Number of maximum connection retries reached
                  21  Exception calling 'Invoke-WebService'
-                 30  Exception calling 'Write-Log'
                  50  Product key has failed to uninstall
 
 .PARAMETER ProductKey
@@ -30,6 +29,9 @@
     Specifies the interval in seconds between retries for the connection when a failure is received.
     Default is 30 seconds.
 
+.PARAMETER SkipActivation
+    Specifies that the activation of the product key should be skipped.
+
 .PARAMETER Uninstall
     Specifies that the product key should be uninstalled.
 
@@ -44,9 +46,9 @@
 
 .NOTES
     Filename:    Activate-Product.ps1
-    Version:     0.19.3
+    Version:     0.20.0
     Author:      Daniel Dorner
-    Date:        10/30/2020
+    Date:        01/13/2022
 
     This  script  code  is  provided  "as  is",  with  no guarantee or warranty
     concerning the usability or impact on systems and may be used, distributed,
@@ -62,14 +64,12 @@
 param
 (
 	[Parameter(Mandatory = $true,
-		ValueFromPipelineByPropertyName = $true,
 		HelpMessage = 'Please enter the product key. It is a 25-character code and looks like this: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX')]
 	[ValidatePattern('^([A-Z0-9]{5}-){4}[A-Z0-9]{5}$')]
 	[string]$ProductKey,
 
 	[Parameter(ParameterSetName = 'install',
 		Mandatory = $true,
-		ValueFromPipelineByPropertyName = $true,
 		HelpMessage = 'Please enter the URL of the ActivationWs web service, eg. "https://server.domain.name/ActivationWs.asmx"')]
 	[ValidateScript({
 		$uri = [uri]$_
@@ -81,13 +81,11 @@ param
 	})]
 	[string]$WebServiceUrl,
 
-	[Parameter(ParameterSetName = 'install',
-		ValueFromPipelineByPropertyName = $true)]
+	[Parameter(ParameterSetName = 'install')]
 	[ValidateRange(0, 2147483647)]
 	[int]$MaximumRetryCount = 3,
 
-	[Parameter(ParameterSetName = 'install',
-		ValueFromPipelineByPropertyName = $true)]
+	[Parameter(ParameterSetName = 'install')]
 	[ValidateRange(0, 2147483647)]
 	[int]$RetryIntervalSec = 30,
 
@@ -97,16 +95,19 @@ param
 	[Parameter(ParameterSetName = 'uninstall')]
 	[switch]$Uninstall,
 
-	[Parameter(ValueFromPipelineByPropertyName = $true)]
+	[Parameter()]
 	[ValidateNotNullOrEmpty()]
 	[string]$LogFile = "$env:TEMP\Activate-Product.log"
 )
 
-$script:scriptVersion = "0.19.3"
+
+$script:scriptVersion = "0.20.0"
 $script:fullyQualifiedHostName = [System.Net.Dns]::GetHostByName($env:COMPUTERNAME).HostName
 $script:logInitialized = $false
+$script:logPath = $LogFile
 
 function Write-Log {
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 	[CmdletBinding()]
 	param (
 		[AllowEmptyString()]
@@ -117,33 +118,36 @@ function Write-Log {
 
 	try {
 		if (-not $script:logInitialized) {
-			"{0}; <---- Starting {1} on host {2}  ---->" -f $timestamp, $MyInvocation.ScriptName, $script:fullyQualifiedHostName | Out-File -FilePath $LogFile -Append -Force
-			"{0}; {1} version: {2}" -f $timestamp, $script:MyInvocation.MyCommand.Name, $script:scriptVersion | Out-File -FilePath $LogFile -Append -Force
-			"{0}; Initialized logging at {1}" -f $timestamp, $LogFile | Out-File -FilePath $LogFile -Append -Force
+			"{0}; <---- Starting {1} on host {2}  ---->" -f $timestamp, $MyInvocation.ScriptName, $script:fullyQualifiedHostName | Out-File -FilePath $script:logPath -Append -Force
+			"{0}; {1} version: {2}" -f $timestamp, $script:MyInvocation.MyCommand.Name, $script:scriptVersion | Out-File -FilePath $script:logPath -Append -Force
+			"{0}; Initialized logging at {1}" -f $timestamp, $script:logPath | Out-File -FilePath $script:logPath -Append -Force
 
 			$script:logInitialized = $true
 		}
 
 		foreach ($line in $Message) {
-			Write-Output $line
+			Write-Host $line
 			$line = "{0}; {1}" -f $timestamp, $line
-			$line | Out-File -FilePath $LogFile -Append -Force
+			$line | Out-File -FilePath $script:logPath -Append -Force
 		}
 
 	} catch [System.IO.DirectoryNotFoundException], [System.UnauthorizedAccessException], [System.IO.IOException], [System.Management.Automation.DriveNotFoundException] {
-		$script:LogFile = "$env:TEMP\Activate-Product.log"
-		Write-Output "[Warning] $_ The output would be redirected to `'$LogFile`'."
+		$script:logPath = "$env:TEMP\Activate-Product.log"
+		Write-Host "[Warning] $_ The output would be redirected to `'$script:logPath`'."
 
 	} catch {
-		Write-Output  "[Error] Exception calling 'Write-Log': $_"
-		Exit 30
+		Write-Host  "[Error] Exception calling 'Write-Log': $_"
 	}
+
 }
 
 function Install-ProductKey {
 	[CmdletBinding()]
 	param (
-		[string]$ProductKey
+		[string]$ProductKey,
+		[string]$WebServiceUrl,
+        [int]$MaximumRetryCount,
+        [int]$RetryIntervalSec
 	)
 
 	$partialProductKey = $ProductKey.Substring($ProductKey.Length - 5)
@@ -207,6 +211,7 @@ function Install-ProductKey {
 
 		if ($SkipActivation) {
 			Write-Log -Message "The product with product key '$ProductKey' has been successfully installed."
+			Update-LicenseStatus
 			Exit 0
 		}
 
@@ -221,7 +226,7 @@ function Install-ProductKey {
 	}
 
 	# Activate product
-	Enable-Product -PartialProductKey $partialProductKey
+	Enable-Product -PartialProductKey $partialProductKey -WebServiceUrl $WebServiceUrl -MaximumRetryCount $MaximumRetryCount -RetryIntervalSec $RetryIntervalSec
 
 	Update-LicenseStatus
 }
@@ -276,21 +281,44 @@ function Uninstall-ProductKey {
 
 function Update-LicenseStatus {
 
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '')]
+	[CmdletBinding()]
+	Param()
+
 	$licensingService = $null
 	$licensingService = Get-WmiObject -Query ('SELECT Version FROM SoftwareLicensingService')
 
 	# Refresh Windows licensing state.
 	try {
+		Write-Log -Message "Updating the licensing status of the machine..."
 		$null = $licensingService.RefreshLicenseStatus()
+		Write-Log -Message "Done."
+
+	} catch [System.Runtime.InteropServices.COMException] {
+		$errorCode = $_.Exception.ErrorCode
+		
+		switch ($errorCode) {
+			'-1073418221' {
+				Write-Log -Message "[Warning] The Software Licensing Service determined that there is no permission to run the software."
+				break
+			}
+			Default {
+				Write-Log -Message "[Warning] The Software Licensing Service reported an error ($errorCode)."
+			}
+		}
 
 	} catch {
+		Write-Log -Message "[Error] Failed to refresh the license state: $_"
 	}
 }
 
 function Enable-Product {
 	[CmdletBinding()]
 	param (
-		[string]$PartialProductKey
+		[string]$PartialProductKey,
+		[string]$WebServiceUrl,
+        [int]$MaximumRetryCount,
+        [int]$RetryIntervalSec
 	)
 
 	# Retrieve product information.
@@ -316,7 +344,7 @@ function Enable-Product {
 	Write-Log -Message "Extd. Product ID : $($licensingProduct.ProductKeyID)"
 
 	# Retrieve the Confirmation ID from ActivationWs web service.
-	$confirmationId = Invoke-WebService -WebServiceUrl $WebServiceUrl -InstallationId $licensingProduct.OfflineInstallationId -ExtendedProductId $licensingProduct.ProductKeyID
+	$confirmationId = Invoke-WebService -WebServiceUrl $WebServiceUrl -InstallationId $licensingProduct.OfflineInstallationId -ExtendedProductId $licensingProduct.ProductKeyID -MaximumRetryCount $MaximumRetryCount -RetryIntervalSec $RetryIntervalSec
 	Write-Log -Message "Confirmation ID  : $confirmationId"
 
 	# Activate the product by depositing the Confirmation ID.
@@ -353,17 +381,18 @@ function Enable-Product {
 		Exit 13
 	}
 
-	Update-LicenseStatus
-
-	# Check if the activation was successful.
+	# Check if the activation was successful.	
 	$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus, LicenseStatusReason FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
 
 	if (-not $licensingProduct.LicenseStatus -eq 1) {
-		Write-Log -Message "[Error] The product has failed to activate ($($licensingProduct.LicenseStatusReason))."
+		Write-Log -Message "[Error] Failed to activate the product. The license status of this product is '$($licensingProduct.LicenseStatus)'. Reason: '$($licensingProduct.LicenseStatusReason)'"		
 		Exit 13
+		
+	} else {
+		Write-Log -Message "The product has been successfully activated."
+	
 	}
 
-	Write-Log -Message "The product has been successfully activated."
 }
 
 function Invoke-WebService {
@@ -371,7 +400,9 @@ function Invoke-WebService {
 	param(
 		[string]$WebServiceUrl,
 		[string]$InstallationId,
-		[string]$ExtendedProductId
+		[string]$ExtendedProductId,
+        	[int]$MaximumRetryCount,
+        	[int]$RetryIntervalSec
 	)
 
 	Write-Log -Message "Sending an activation request to $WebServiceUrl..."
@@ -448,5 +479,5 @@ if ($Uninstall) {
 
 } else {
 	# Install product key.
-	Install-ProductKey -ProductKey $ProductKey
+	Install-ProductKey -ProductKey $ProductKey -WebServiceUrl $WebServiceUrl -MaximumRetryCount $MaximumRetryCount -RetryIntervalSec $RetryIntervalSec
 }
