@@ -11,7 +11,7 @@ ActivationWs is a customizable solution that allows you to automate the Multiple
 
 ActivationWs includes an ASP.NET web service and a PowerShell script to install and activate the MAK. The following graphic shows a simplified version of the ESU license deployment and activation process (the deployment and activation process also applies to all other products):
 
-![activation-process](https://github.com/dadorner-msft/ActivationWs/blob/master/doc/images/activation-process.gif) 
+![activation-process](./doc/images/activation-process.png)
  
 1. The PowerShell script `Activate-Product.ps1` is deployed to your devices (eg. using ConfigMgr or another solution of your choice)
 2. The script installs the MAK, queries the Installation- and Product ID. It then sends a SOAP request to the ActivationWs web service (the ActivationWs web service is installed onto a host in your internal network. Communication takes place over a port of your choice, eg. 80/443)
@@ -36,11 +36,10 @@ ActivationWs includes an ASP.NET web service and a PowerShell script to install 
 
 ## Installation and Usage
 
-The latest version of this solution can be downloaded from the [ActivationWs GitHub releases page](https://github.com/dadorner-msft/ActivationWs/releases). Click on `Assets` to show the files available in the release.
-
-1. Deploy the ActivationWs web service to IIS
-2. For the deployment of ESU licenses only: please ensure that all of the [prerequisites](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#) are installed on your ESU eligible devices
-3. Deploy the PowerShell script `Activate-Product.ps1` to all relevant devices to install and activate the license
+1. Build the solution
+2. Deploy the ActivationWs web service to IIS
+3. For the deployment of ESU licenses only: please ensure that all of the [prerequisites](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#) are installed on your ESU eligible devices
+4. Deploy the PowerShell script `Activate-Product.ps1` to all relevant devices to install and activate the license
 
 ![activate-product](https://github.com/dadorner-msft/activationws/blob/master/doc/images/Activate-License-v0.15.2.gif)
 
@@ -75,7 +74,7 @@ Please take a look at [this blog article](https://techcommunity.microsoft.com/t5
 
 If it fails even though you followed these steps, please take a look at the following support article: [How to rebuild the Tokens.dat file when you troubleshoot Windows activation issues](https://support.microsoft.com/en-us/help/2736303).
 
-**Activate-Product.ps1 fails with "[Error] The Installation ID (IID) and the Confirmation ID (CID) do not match" or "[Error] Product activation failed (3221549105)"**
+**Activate-Product.ps1 fails with "[Error] The Installation ID (IID) and the Confirmation ID (CID) do not match"
 
 For the deployment of ESU licenses only: ensure that all of the [prerequisites](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#) are installed on your ESU eligible device
 
