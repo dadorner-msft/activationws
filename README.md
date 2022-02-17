@@ -1,11 +1,11 @@
-<img src="./doc/images/ActivationWs_logo_with_text.png" width="400"/>
+<img src="./doc/images/ActivationWs_logo_with_text.png" width="400" alt="Trusted by the world’s leading enterprises"/>
 
 ## Overview
 Welcome to the ActivationWs GitHub repository!
 
 ActivationWs is a customizable solution that allows you to automate the Multiple Activation Key (MAK) activation process for Windows, Office, and other Microsoft products (eg. Extended Security Update (ESU)).
 
-[Requirements](#requirements) | [Installation and Usage](#installation-and-usage) | [FAQ](#faq) | [Contribution](#contributions-are-welcome) | [Code of Conduct](#code-of-conduct) | [Disclaimer](#disclaimer)
+[Requirements](#requirements) | [Installation and Usage](#installation-and-usage) | [FAQ](#faq) | [Contribution](#contributions-are-welcome) | [Code of Conduct](#code-of-conduct)
 
 ### How does ActivationWs work and how does it benefit you?
 
@@ -36,12 +36,12 @@ ActivationWs includes an ASP.NET web service and a PowerShell script to install 
 
 ## Installation and Usage
 
-1. Build the solution
+1. Build the solution (Visual Studio 2019 or later)
 2. Deploy the ActivationWs web service to IIS
 3. For the deployment of ESU licenses only: please ensure that all of the [prerequisites](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#) are installed on your ESU eligible devices
 4. Deploy the PowerShell script `Activate-Product.ps1` to all relevant devices to install and activate the license
 
-![activate-product](https://github.com/dadorner-msft/activationws/blob/master/doc/images/Activate-License-v0.15.2.gif)
+![activate-product](./doc/images/Activate-License-v0.15.2.gif)
 
 ### Manual Confirmation ID retrieval
 
@@ -51,41 +51,43 @@ ActivationWs also supports you in the activation process of air-gapped devices.
 2. Enter the Installation- and Product ID to retrieve the corresponding Confirmation ID
 3. Activate the product by `slmgr.vbs /atp <Confirmation ID> <Activation ID>`
 
-![manual-cid-retrieval](https://github.com/dadorner-msft/activationws/blob/master/doc/images/manual-cid-retrieval.png)
+![manual-cid-retrieval](./doc/images/manual-cid-retrieval.png)
 
 [Back to Overview](#overview)
 
 ## FAQ
 
-The following section contains answers to frequently asked questions. Please feel free to [contact me](https://github.com/login?return_to=https%3A%2F%2Fgithub.com%2Fdadorner-msft) should you have any question or need support.
+### How to get help
 
-**To which external addresses does ActivationWs web service specifically need access to?**
+The following section contains answers to frequently asked questions. Please feel free to file an [issue](https://github.com/dadorner-msft/ActivationWs/issues) or [contact me](https://github.com/login?return_to=https%3A%2F%2Fgithub.com%2Fdadorner-msft) should you have any question or need support.
+
+### To which external addresses does ActivationWs web service specifically need access to?
 
 ActivationWs web service requires access to the URL listed in the [requirement](#requirements) section.
 
-**After successfully deploying the licenses using ActivationWs, how can I verify the deployment of the extended security updates?**
+### After successfully deploying the licenses using ActivationWs, how can I verify the deployment of the extended security updates?
 
 Please take a look at [this blog article](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#), which outlines the available updates to verify the deployment.
 
-**Activate-Product.ps1 fails with "[Error] The product key is invalid"**
+### Activate-Product.ps1 fails with "[Error] The product key is invalid"
 
 - Check your product key
 - For the deployment of ESU licenses only: ensure that all of the [prerequisites](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#) are installed on your ESU eligible device
 
 If it fails even though you followed these steps, please take a look at the following support article: [How to rebuild the Tokens.dat file when you troubleshoot Windows activation issues](https://support.microsoft.com/en-us/help/2736303).
 
-**Activate-Product.ps1 fails with "[Error] The Installation ID (IID) and the Confirmation ID (CID) do not match"
+### Activate-Product.ps1 fails with "[Error] The Installation ID (IID) and the Confirmation ID (CID) do not match"
 
 For the deployment of ESU licenses only: ensure that all of the [prerequisites](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#) are installed on your ESU eligible device
 
-**Activate-Product.ps1 fails with "[Warning] The remote server returned an error: (500) Internal Server Error"**
+### Activate-Product.ps1 fails with "[Warning] The remote server returned an error: (500) Internal Server Error"
 
 This is a "server-side" error, meaning that the ActivationWs web service couldn't acquire the Confirmation ID. Reasons include:
 - The ActivationWs web service couldn't connect to the [required URL](#requirements)
 - No MAK activations are left on your product key
 - The specified WebServiceUrl is incorrect
 
-**We're using SCCM to deploy your script. Is there way to obfuscate or hide the ESU key in the logs?**
+### We're using SCCM to deploy your script. Is there way to obfuscate or hide the ESU key in the logs?
 
 You could create a task sequence (TS) variable that contains the MAK. Then modify the PowerShell script `Activate-Product.ps1` to not output the product key and create an instance of a COM object that represents the TS environment to read the variable, eg.
 
@@ -110,16 +112,6 @@ There are many ways to contribute:
 
 ## Code of Conduct
 
-This project has adopted the [Microsoft Open Source Code of Conduct][conduct-code]. For more information see the [Code of Conduct FAQ][conduct-FAQ] or contact [opencode@microsoft.com][conduct-email] with any additional questions or comments.
-
-[conduct-code]: https://opensource.microsoft.com/codeofconduct/ 
-[conduct-FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
-[conduct-email]: mailto:opencode@microsoft.com
-
-[Back to Overview](#overview)
-
-## Disclaimer
-
-This script code is provided "as is", with no guarantee or warranty concerning the usability or impact on systems and may be used, distributed, and modified in any way provided the parties agree and acknowledge the Microsoft or Microsoft Partners have neither accountability or responsibility for results produced by use of this script.
+This project has adopted the [Microsoft Open Source Code of Conduct](CODE_OF_CONDUCT.md).
 
 [Back to Overview](#overview)

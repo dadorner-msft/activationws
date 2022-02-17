@@ -46,9 +46,9 @@
 
 .NOTES
     Filename:    Activate-Product.ps1
-    Version:     0.20.0
+    Version:     0.22.0
     Author:      Daniel Dorner
-    Date:        01/13/2022
+    Date:        02/13/2022
 
     This  script  code  is  provided  "as  is",  with  no guarantee or warranty
     concerning the usability or impact on systems and may be used, distributed,
@@ -61,6 +61,7 @@
 #>
 
 [CmdletBinding(DefaultParameterSetName = 'install')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWMICmdlet', '', Scope='Function', Target='*', Justification='Compatibility')]
 param
 (
 	[Parameter(Mandatory = $true,
@@ -101,10 +102,19 @@ param
 )
 
 
-$script:scriptVersion = "0.20.0"
+$script:scriptVersion = "0.22.0"
 $script:fullyQualifiedHostName = [System.Net.Dns]::GetHostByName($env:COMPUTERNAME).HostName
 $script:logInitialized = $false
 $script:logPath = $LogFile
+$script:licenseStatus = @{
+	0 = 'Unlicensed'
+	1 = 'Licensed'
+	2 = 'OOBGrace'
+	3 = 'OOTGrace'
+	4 = 'NonGenuineGrace'
+	5 = 'Notification'
+	6 = 'ExtendedGrace'
+}
 
 function Write-Log {
 	[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
@@ -118,6 +128,12 @@ function Write-Log {
 
 	try {
 		if (-not $script:logInitialized) {
+			if (-not $(try {$null | Out-File -FilePath $script:logPath -Append -Force; $true} catch {$false})) {
+				# Unable to write to log file
+				$script:logPath = "$env:TEMP\Activate-Product.log"
+				Write-Host "[Warning] Unable to write to log file. The output is redirected to `'$script:logPath`'."
+			}
+
 			"{0}; <---- Starting {1} on host {2}  ---->" -f $timestamp, $MyInvocation.ScriptName, $script:fullyQualifiedHostName | Out-File -FilePath $script:logPath -Append -Force
 			"{0}; {1} version: {2}" -f $timestamp, $script:MyInvocation.MyCommand.Name, $script:scriptVersion | Out-File -FilePath $script:logPath -Append -Force
 			"{0}; Initialized logging at {1}" -f $timestamp, $script:logPath | Out-File -FilePath $script:logPath -Append -Force
@@ -133,10 +149,11 @@ function Write-Log {
 
 	} catch [System.IO.DirectoryNotFoundException], [System.UnauthorizedAccessException], [System.IO.IOException], [System.Management.Automation.DriveNotFoundException] {
 		$script:logPath = "$env:TEMP\Activate-Product.log"
-		Write-Host "[Warning] $_ The output would be redirected to `'$script:logPath`'."
+		Write-Host "[Warning] $_ The output is redirected to `'$script:logPath`'."
+		$line | Out-File -FilePath $script:logPath -Append -Force
 
 	} catch {
-		Write-Host  "[Error] Exception calling 'Write-Log': $_"
+		Write-Host "[Error] Exception calling 'Write-Log': $_"
 	}
 
 }
@@ -146,8 +163,8 @@ function Install-ProductKey {
 	param (
 		[string]$ProductKey,
 		[string]$WebServiceUrl,
-        [int]$MaximumRetryCount,
-        [int]$RetryIntervalSec
+		[int]$MaximumRetryCount,
+		[int]$RetryIntervalSec
 	)
 
 	$partialProductKey = $ProductKey.Substring($ProductKey.Length - 5)
@@ -210,7 +227,7 @@ function Install-ProductKey {
 		}
 
 		if ($SkipActivation) {
-			Write-Log -Message "The product with product key '$ProductKey' has been successfully installed."
+			Write-Log -Message "The product key has been successfully installed."
 			Update-LicenseStatus
 			Exit 0
 		}
@@ -219,7 +236,7 @@ function Install-ProductKey {
 		$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
 		if ($licensingProduct.LicenseStatus -eq 1) {
 			# Product is activated.
-			Write-Log -Message "The product with product key '$ProductKey' is already activated."
+			Write-Log -Message "The product is already activated."
 			Exit 0
 		}
 
@@ -280,7 +297,6 @@ function Uninstall-ProductKey {
 }
 
 function Update-LicenseStatus {
-
 	[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '')]
 	[CmdletBinding()]
 	Param()
@@ -296,7 +312,7 @@ function Update-LicenseStatus {
 
 	} catch [System.Runtime.InteropServices.COMException] {
 		$errorCode = $_.Exception.ErrorCode
-		
+
 		switch ($errorCode) {
 			'-1073418221' {
 				Write-Log -Message "[Warning] The Software Licensing Service determined that there is no permission to run the software."
@@ -317,8 +333,8 @@ function Enable-Product {
 	param (
 		[string]$PartialProductKey,
 		[string]$WebServiceUrl,
-        [int]$MaximumRetryCount,
-        [int]$RetryIntervalSec
+		[int]$MaximumRetryCount,
+		[int]$RetryIntervalSec
 	)
 
 	# Retrieve product information.
@@ -381,16 +397,15 @@ function Enable-Product {
 		Exit 13
 	}
 
-	# Check if the activation was successful.	
+	# Check if the activation was successful.
 	$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus, LicenseStatusReason FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
 
 	if (-not $licensingProduct.LicenseStatus -eq 1) {
-		Write-Log -Message "[Error] Failed to activate the product. The license status of this product is '$($licensingProduct.LicenseStatus)'. Reason: '$($licensingProduct.LicenseStatusReason)'"		
+		Write-Log -Message "[Error] Failed to activate the product. The license status of this product is '$($script:licenseStatus[[int]$licensingProduct.LicenseStatus])'. Reason: '$($licensingProduct.LicenseStatusReason)'."
 		Exit 13
-		
+
 	} else {
 		Write-Log -Message "The product has been successfully activated."
-	
 	}
 
 }
@@ -401,8 +416,8 @@ function Invoke-WebService {
 		[string]$WebServiceUrl,
 		[string]$InstallationId,
 		[string]$ExtendedProductId,
-        	[int]$MaximumRetryCount,
-        	[int]$RetryIntervalSec
+		[int]$MaximumRetryCount,
+		[int]$RetryIntervalSec
 	)
 
 	Write-Log -Message "Sending an activation request to $WebServiceUrl..."
