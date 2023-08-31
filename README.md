@@ -38,7 +38,9 @@ ActivationWs includes an ASP.NET web service and a PowerShell script to install 
 
 1. Build the solution (Visual Studio 2019 or later)
 2. Deploy the ActivationWs web service to IIS
-3. For the deployment of ESU licenses only: please ensure that all of the [prerequisites](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#) are installed on your ESU eligible devices
+3. For the deployment of ESU licenses only: please ensure that all of the prerequisites are installed on your ESU eligible devices
+   - [Prerequisites for Windows 7 and Windows Server 2008/2008 R2](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#)
+   - [Prerequisites for Windows Server 2012/2012 R2](https://support.microsoft.com/en-us/topic/kb5031043-procedure-to-continue-receiving-security-updates-after-extended-support-has-ended-on-october-10-2023-c1a20132-e34c-402d-96ca-1e785ed51d45) 
 4. Deploy the PowerShell script `Activate-Product.ps1` to all relevant devices to install and activate the license
 
 ![activate-product](./doc/images/Activate-License-v0.15.2.gif)
@@ -72,13 +74,13 @@ Please take a look at [this blog article](https://techcommunity.microsoft.com/t5
 ### Activate-Product.ps1 fails with "[Error] The product key is invalid"
 
 - Check your product key
-- For the deployment of ESU licenses only: ensure that all of the [prerequisites](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#) are installed on your ESU eligible device
+- For the deployment of ESU licenses only: ensure that all of the [prerequisites](#installation-and-usage) are installed on your ESU eligible device
 
 If it fails even though you followed these steps, please take a look at the following support article: [How to rebuild the Tokens.dat file when you troubleshoot Windows activation issues](https://support.microsoft.com/en-us/help/2736303).
 
 ### Activate-Product.ps1 fails with "[Error] The Installation ID (IID) and the Confirmation ID (CID) do not match"
 
-For the deployment of ESU licenses only: ensure that all of the [prerequisites](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#) are installed on your ESU eligible device
+For the deployment of ESU licenses only: ensure that all of the [prerequisites](#installation-and-usage) are installed on your ESU eligible device
 
 ### Activate-Product.ps1 fails with "[Warning] The remote server returned an error: (500) Internal Server Error"
 
