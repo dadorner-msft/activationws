@@ -46,9 +46,9 @@
 
 .NOTES
     Filename:    Activate-Product.ps1
-    Version:     0.22.2
+    Version:     0.25.1
     Author:      Daniel Dorner
-    Date:        02/20/2022
+    Date:        11/30/2023
 
     This  script  code  is  provided  "as  is",  with  no guarantee or warranty
     concerning the usability or impact on systems and may be used, distributed,
@@ -61,9 +61,7 @@
 #>
 
 [CmdletBinding(DefaultParameterSetName = 'UseWebServiceToActivate')]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWMICmdlet', '', Scope='Function', Target='*', Justification='Compatibility')]
-param
-(
+param (
 	[Parameter(Mandatory = $true,
 		HelpMessage = 'Please enter the product key. It is a 25-character code and looks like this: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX')]
 	[ValidatePattern('^([A-Z0-9]{5}-){4}[A-Z0-9]{5}$')]
@@ -102,7 +100,7 @@ param
 )
 
 
-$script:scriptVersion = "0.22.2"
+$script:scriptVersion = "0.25.1"
 $script:fullyQualifiedHostName = [System.Net.Dns]::GetHostByName($env:COMPUTERNAME).HostName
 $script:logInitialized = $false
 $script:logPath = $LogFile
@@ -169,7 +167,7 @@ function Install-ProductKey {
 	)
 
 	$partialProductKey = $ProductKey.Substring($ProductKey.Length - 5)
-	$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
+	$licensingProduct = Get-CimInstance -Query "SELECT LicenseStatus FROM SoftwareLicensingProduct WHERE PartialProductKey = '$partialProductKey'"
 
 	# Check if product key is installed and activated.
 	if ($licensingProduct) {
@@ -190,37 +188,14 @@ function Install-ProductKey {
 
 	} else {
 		# Product key is not installed.
-		$licensingService = Get-WmiObject -Query ('SELECT Version FROM SoftwareLicensingService')
+		$licensingService = Get-CimInstance -Query "SELECT Version FROM SoftwareLicensingService"
 		Write-Log -Message "The Software Licensing Service version is '$($licensingService.Version)'."
 
 		# Install product key.
 		Write-Log -Message "Installing product key '$ProductKey'..."
 
 		try {
-			$null = $licensingService.InstallProductKey($ProductKey)
-
-		} catch [System.Runtime.InteropServices.COMException] {
-			$errorCode = $_.Exception.ErrorCode
-
-			switch ($errorCode) {
-				'-1073418203' {
-					Write-Log -Message "[Error] The action requires administrator privileges."
-					break
-				}
-				'-1073418135' {
-					Write-Log -Message "[Error] The product SKU is not found."
-					break
-				}
-				'-1073418160' {
-					Write-Log -Message "[Error] The product key is invalid."
-					break
-				}
-				Default {
-					Write-Log -Message "[Error] The product key has failed to install ($errorCode)."
-				}
-			}
-
-			Exit 10
+			$null = Invoke-CimMethod -InputObject $licensingService -MethodName InstallProductKey –Arguments @{ProductKey = $ProductKey} -ErrorAction Stop
 
 		} catch {
 			Write-Log -Message "[Error] The product key has failed to install: $_"
@@ -234,7 +209,7 @@ function Install-ProductKey {
 		}
 
 		# Check whether the product has already been activated by a previous installation (the licensing state is not discarded after a product has been uninstalled).
-		$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
+		$licensingProduct = Get-CimInstance -Query "SELECT LicenseStatus FROM SoftwareLicensingProduct WHERE PartialProductKey = '$partialProductKey'"
 		if ($licensingProduct.LicenseStatus -eq 1) {
 			# Product is activated.
 			Write-Log -Message "The product is already activated."
@@ -261,7 +236,7 @@ function Uninstall-ProductKey {
 	Write-Log -Message "Retrieving product information..."
 	$partialProductKey = $ProductKey.Substring($ProductKey.Length - 5)
 	$licensingProduct = $null
-	$licensingProduct = Get-WmiObject -Query ('SELECT ID FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
+	$licensingProduct = Get-CimInstance -Query "SELECT Id FROM SoftwareLicensingProduct WHERE PartialProductKey = '$partialProductKey'"
 
 	if (-not $licensingProduct) {
 		Write-Log -Message "[Error] The product could not be found."
@@ -270,22 +245,7 @@ function Uninstall-ProductKey {
 
 	try {
 		# Uninstall product key.
-		$null = $licensingProduct.UninstallProductKey()
-
-	} catch [System.Runtime.InteropServices.COMException] {
-		$errorCode = $_.Exception.ErrorCode
-
-		switch ($errorCode) {
-			'-1073418203' {
-				Write-Log -Message "[Error] The action requires administrator privileges."
-				break
-			}
-			Default {
-				Write-Log -Message "[Error] The product key has failed to uninstall ($errorCode)."
-			}
-		}
-
-		Exit 50
+		$null = Invoke-CimMethod -InputObject $licensingProduct -MethodName UninstallProductKey -ErrorAction Stop
 
 	} catch {
 		Write-Log -Message "[Error] The product key has failed to uninstall: $_"
@@ -303,26 +263,13 @@ function Update-LicenseStatus {
 	Param()
 
 	$licensingService = $null
-	$licensingService = Get-WmiObject -Query ('SELECT Version FROM SoftwareLicensingService')
+	$licensingService = Get-CimInstance -Query "SELECT Version FROM SoftwareLicensingService"
 
 	# Refresh Windows licensing state.
 	try {
 		Write-Log -Message "Updating the licensing status of the machine..."
-		$null = $licensingService.RefreshLicenseStatus()
+		$null =  Invoke-CimMethod -InputObject $licensingService -MethodName RefreshLicenseStatus -ErrorAction Stop
 		Write-Log -Message "Done."
-
-	} catch [System.Runtime.InteropServices.COMException] {
-		$errorCode = $_.Exception.ErrorCode
-
-		switch ($errorCode) {
-			'-1073418221' {
-				Write-Log -Message "[Warning] The Software Licensing Service determined that there is no permission to run the software."
-				break
-			}
-			Default {
-				Write-Log -Message "[Warning] The Software Licensing Service reported an error ($errorCode)."
-			}
-		}
 
 	} catch {
 		Write-Log -Message "[Error] Failed to refresh the license state: $_"
@@ -341,7 +288,7 @@ function Enable-Product {
 	# Retrieve product information.
 	Write-Log -Message "Retrieving product information..."
 	$licensingProduct = $null
-	$licensingProduct = Get-WmiObject -Query ('SELECT ID, Name, Description, OfflineInstallationId, ProductKeyID FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
+	$licensingProduct = Get-CimInstance -Query "SELECT ID, Name, Description, OfflineInstallationId, ProductKeyID FROM SoftwareLicensingProduct WHERE PartialProductKey = '$partialProductKey'"
 
 	if (-not $licensingProduct) {
 		Write-Log -Message "[Error] The product with product key '$ProductKey' could not be found."
@@ -368,38 +315,15 @@ function Enable-Product {
 	Write-Log -Message "Activating product..."
 
 	try {
-		$null = $licensingProduct.DepositOfflineConfirmationId($licensingProduct.OfflineInstallationId, $confirmationId)
-
-	} catch [System.Runtime.InteropServices.COMException] {
-		$errorCode = $_.Exception.ErrorCode
-
-		switch ($errorCode) {
-			'-1073418203' {
-				Write-Log -Message "[Error] The action requires administrator privileges."
-				break
-			}
-			'-1073418163' {
-				Write-Log -Message "[Error] The Installation ID (IID) or the Confirmation ID (CID) is invalid."
-				break
-			}
-			'-1073418191' {
-				Write-Log -Message "[Error] The Installation ID (IID) and the Confirmation ID (CID) do not match."
-				break
-			}
-			Default {
-				Write-Log -Message "[Error] Failed to deposit the Confirmation ID. The product was not activated ($errorCode)."
-			}
-		}
-
-		Exit 13
+		$null = Invoke-CimMethod -InputObject $licensingProduct -MethodName DepositOfflineConfirmationId –Arguments @{ InstallationId = $licensingProduct.OfflineInstallationId; ConfirmationId = $confirmationId } -ErrorAction Stop
 
 	} catch {
-		Write-Log -Message "[Error] Failed to deposit the Confirmation ID. The product was not activated: $_"
+		Write-Log -Message "[Error] Failed to deposit the Confirmation ID: $_"
 		Exit 13
 	}
 
 	# Check if the activation was successful.
-	$licensingProduct = Get-WmiObject -Query ('SELECT LicenseStatus, LicenseStatusReason FROM SoftwareLicensingProduct WHERE PartialProductKey = "{0}"' -f $partialProductKey)
+	$licensingProduct = Get-CimInstance -Query "SELECT LicenseStatus, LicenseStatusReason FROM SoftwareLicensingProduct WHERE PartialProductKey = '$partialProductKey'"
 
 	if (-not $licensingProduct.LicenseStatus -eq 1) {
 		Write-Log -Message "[Error] Failed to activate the product. The license status of this product is '$($script:licenseStatus[[int]$licensingProduct.LicenseStatus])'. Reason: '$($licensingProduct.LicenseStatusReason)'."
@@ -441,24 +365,15 @@ function Invoke-WebService {
 	while (-not $requestSucceeded) {
 		try {
 			if ($numberOfRetries -le $MaximumRetryCount) {
-				$webRequest = [System.Net.WebRequest]::Create($WebServiceUrl)
-				$webRequest.Accept = "text/xml"
-				$webRequest.ContentType = "text/xml;charset=`"utf-8`""
-				$webRequest.Headers.Add("SOAPAction", "`"http://tempuri.org/AcquireConfirmationId`"")
-				$webRequest.Method = "POST"
-				$webRequest.UserAgent = "PowerShell/{0} ({1}) {2}/{3}" -f $PSVersionTable.PSVersion, $script:fullyQualifiedHostName, $script:MyInvocation.MyCommand.Name, $script:scriptVersion
 
-				$requestStream = $webRequest.GetRequestStream()
-				$soapEnvelopeDocument.Save($requestStream)
-				$requestStream.Close()
-				$response = $webRequest.GetResponse()
+				$headers = @{
+					"Content-Type" = "text/xml;charset=`"utf-8`""
+					"SOAPAction"   = "`"http://tempuri.org/AcquireConfirmationId`""
+					"User-Agent"   = "PowerShell/{0} ({1}) {2}/{3}" -f $PSVersionTable.PSVersion, $script:fullyQualifiedHostName, $script:MyInvocation.MyCommand.Name, $script:scriptVersion
+				}
 
-				Write-Log -Message "Response status: $([int]$response.StatusCode) - $($response.StatusDescription))"
-
-				$responseStream = $response.GetResponseStream()
-				$soapReader = [System.IO.StreamReader]($responseStream)
-				$responseXml = [xml]$soapReader.ReadToEnd()
-				$responseStream.Close()
+				$response = Invoke-WebRequest -Uri $WebServiceUrl -Method POST -Headers $headers -Body $soapEnvelopeDocument -UseBasicParsing
+				Write-Log -Message "Response status: $([int]$response.StatusCode) - $($response.StatusDescription)"
 
 				$requestSucceeded = $true
 
@@ -469,8 +384,17 @@ function Invoke-WebService {
 			}
 
 		} catch [System.Net.WebException] {
-			# The ActivationWs web service could not be contacted or returned an unexpected response.
-			Write-Log -Message "[Error] $_"
+			# The ActivationWs web service could not be contacted or returned an unexpected response, eg. a non-success HTTP message
+			if ($_.Exception.Response.StatusCode.value__) {
+				$statusCode = $_.Exception.Response.StatusCode.value__
+				$statusDescription = $_.Exception.Response.StatusDescription
+
+				Write-Log -Message "[Error] Exception calling 'Invoke-WebService'. The web service returned: $($statusCode) - $($statusDescription)"
+				Exit 21
+
+			} else {
+				Write-Log -Message "[Error] $_"
+			}
 
 			$numberOfRetries ++
 			if ($numberOfRetries -le $MaximumRetryCount) {
@@ -486,13 +410,14 @@ function Invoke-WebService {
 	}
 
 	# Return Confirmation ID.
+	$responseXml = [xml]$response.Content
 	return $responseXml.Envelope.Body.AcquireConfirmationIdResponse.InnerText
 }
+
 
 if ($Uninstall) {
 	# Uninstall product key.
 	Uninstall-ProductKey -ProductKey $ProductKey
-
 } else {
 	# Install product key.
 	Install-ProductKey -ProductKey $ProductKey -WebServiceUrl $WebServiceUrl -MaximumRetryCount $MaximumRetryCount -RetryIntervalSec $RetryIntervalSec -SkipActivation:$SkipActivation

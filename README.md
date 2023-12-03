@@ -31,7 +31,7 @@ Activation steps:
 - ActivationWs web service runs on IIS and requires
   - the .NET Framework 4.6 and ASP.NET modules
   - access to the Microsoft BatchActivation Service (`https://activation.sls.microsoft.com`). A proxy server can be specified in the web.config file, where necessary
-- `Activate-Product.ps1` requires Windows PowerShell 2.0 or later and needs to be executed with administrative rights
+- `Activate-Product.ps1` requires Windows PowerShell 3.0 or later and needs to be executed with administrative rights
 
 ## Installation and Usage
 This section highlights some of the most frequent scenarios and guides you through the initial setup.
@@ -44,7 +44,7 @@ This section highlights some of the most frequent scenarios and guides you throu
 After you have deployed ActivationWs web service to IIS, deploy the PowerShell script `Activate-Product.ps1`.
 
 The following animation demonstrates the MAK installation and activation of an ESU product:
-![Animation demonstrating the installation and activation of an ESU product](./doc/images/activate-product_v0.15.2.gif)
+![Animation demonstrating the installation and activation of an ESU product](./doc/images/activate-product-v0.25.1.gif)
 
 > [!NOTE]
 > For the deployment of ESU MAKs, please ensure that these prerequisites are met on your devices:
