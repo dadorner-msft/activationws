@@ -1,116 +1,110 @@
 <img src="./doc/images/ActivationWs_logo_with_text.png" width="400" alt="Trusted by the world’s leading enterprises"/>
-
-## Overview
 Welcome to the ActivationWs GitHub repository!
 
-ActivationWs is a customizable solution that allows you to automate the Multiple Activation Key (MAK) activation process for Windows, Office, and other Microsoft products (eg. Extended Security Update (ESU)).
+## Overview
+ActivationWs is a customizable solution that allows you to automate the Multiple Activation Key (MAK)[^1] activation process for various Microsoft products, like Windows, Office, and Extended Security Update (ESU) add-ons.
+[^1]: MAKs are interchangeably referred to as product keys, or license keys
+
+Key benefits:
+- Helps organizations of any size with the deployment of MAKs
+- Provides a pull-based activation solution and reduces obstacles faced during product activation
+- Easy to implement, time-saving, allows you to ensure business goals are realized, manages risks and delivers business value
+- Customizable and addresses privacy concerns, as the source code is available to the public
 
 [Requirements](#requirements) | [Installation and Usage](#installation-and-usage) | [FAQ](#faq) | [Contribution](#contributions-are-welcome) | [Code of Conduct](#code-of-conduct)
 
-### How does ActivationWs work and how does it benefit you?
+## How does ActivationWs work?
+ActivationWs made up of two components: an ASP.NET web service and a PowerShell script to install the MAK and activate the product.
 
-ActivationWs includes an ASP.NET web service and a PowerShell script to install and activate the MAK. The following graphic shows a simplified version of the ESU license deployment and activation process (the deployment and activation process also applies to all other products):
+The following illustration shows a simplified version of the MAK deployment and product activation process:
 
-![activation-process](./doc/images/activation-process.png)
- 
-1. The PowerShell script `Activate-Product.ps1` is deployed to your devices (eg. using ConfigMgr or another solution of your choice)
-2. The script installs the MAK, queries the Installation- and Product ID. It then sends a SOAP request to the ActivationWs web service (the ActivationWs web service is installed onto a host in your internal network. Communication takes place over a port of your choice, eg. 80/443)
-3. Installation- and Product IDs are sent to the Microsoft BatchActivation Service
-4. Confirmation ID is returned to the ActivationWs web service, which will then return the Confirmation ID to the device
-5. The script deposits the Confirmation ID and concludes the activation
+![Illustration showing a simplified version of the MAK deployment and product activation process](./doc/images/activation-process.png)
 
-#### Benefits:
-- Helps organizations of any size with the deployment of MAKs
-- Provides a pull-based activation solution and reduces obstacles faced during the product key activation
-- Easy to implement, time-saving, allows you to ensure business goals are realized, manages risks and delivers business value
-- Customizable and addresses privacy concerns, given the fact that the source code is available to the public
-
-[Back to Overview](#overview)
+Activation steps:
+1. The PowerShell script `Activate-Product.ps1` is deployed to your devices using ConfigMgr or a deployment tool of your choice
+2. The script installs the MAK and queries the respective Installation- and Product IDs. It then sends the data to the ActivationWs web service. Communication between the device and the ActivationWs web service takes place over a port of your choice, eg. 80/443
+3. Installation- and Product IDs are transmitted to the Microsoft BatchActivation Service
+4. A Confirmation ID is subsequently returned to the ActivationWs web service
+5. ActivationWs web service returns the Confirmation ID to the device. The script deposits the Confirmation ID and concludes the product activation
 
 ## Requirements
-- ActivationWs web service runs on IIS and requires the .NET Framework 4.6 and ASP.NET modules
-- The web service requires access to the Microsoft BatchActivation Service (`https://activation.sls.microsoft.com`). A proxy server can be specified in the web.config file, where necessary
-- `Activate-Product.ps1` requires Windows PowerShell v2.0 or later and needs to be executed with administrative rights
-
-[Back to Overview](#overview)
+- ActivationWs web service runs on IIS and requires
+  - the .NET Framework 4.6 and ASP.NET modules
+  - access to the Microsoft BatchActivation Service (`https://activation.sls.microsoft.com`). A proxy server can be specified in the web.config file, where necessary
+- `Activate-Product.ps1` requires Windows PowerShell 2.0 or later and needs to be executed with administrative rights
 
 ## Installation and Usage
+This section highlights some of the most frequent scenarios and guides you through the initial setup.
 
+### Steps to deploy the ActivationWs web service:
 1. Build the solution (Visual Studio 2019 or later)
 2. Deploy the ActivationWs web service to IIS
-3. For the deployment of ESU licenses only: please ensure that all of the prerequisites are installed on your ESU eligible devices
-   - [Prerequisites for Windows 7 and Windows Server 2008/2008 R2](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#)
-   - [Prerequisites for Windows Server 2012/2012 R2](https://support.microsoft.com/en-us/topic/kb5031043-procedure-to-continue-receiving-security-updates-after-extended-support-has-ended-on-october-10-2023-c1a20132-e34c-402d-96ca-1e785ed51d45) 
-4. Deploy the PowerShell script `Activate-Product.ps1` to all relevant devices to install and activate the license
 
-![activate-product](./doc/images/Activate-License-v0.15.2.gif)
+### Scenario 1: Automated activation
+After you have deployed ActivationWs web service to IIS, deploy the PowerShell script `Activate-Product.ps1`.
 
-### Manual Confirmation ID retrieval
+The following animation demonstrates the MAK installation and activation of an ESU product:
+![Animation demonstrating the installation and activation of an ESU product](./doc/images/activate-product_v0.15.2.gif)
 
-ActivationWs also supports you in the activation process of air-gapped devices.
+> [!NOTE]
+> For the deployment of ESU MAKs, please ensure that these prerequisites are met on your devices:
+> * [Prerequisites for Windows 7 and Windows Server 2008/2008 R2](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#)
+> * [Prerequisites for Windows Server 2012/2012 R2](https://support.microsoft.com/en-us/topic/kb5031043-procedure-to-continue-receiving-security-updates-after-extended-support-has-ended-on-october-10-2023-c1a20132-e34c-402d-96ca-1e785ed51d45)
 
+
+### Scenario 2: Manual activation
+
+ActivationWs also supports you in the activation process for air-gapped devices, offering a time-saving alternative to calling the Volume Licensing Activation Center.
+
+Activation steps:
 1. Open the ActivationWs site
-2. Enter the Installation- and Product ID to retrieve the corresponding Confirmation ID
+2. Enter the Installation- and Product IDs to retrieve the corresponding Confirmation ID
 3. Activate the product by `slmgr.vbs /atp <Confirmation ID> <Activation ID>`
 
-![manual-cid-retrieval](./doc/images/manual-cid-retrieval.png)
-
-[Back to Overview](#overview)
+![Graphic showing the ActivationWS UI](./doc/images/manual-cid-retrieval.png)
 
 ## FAQ
 
-### How to get help
-
-The following section contains answers to frequently asked questions. Please feel free to file an [issue](https://github.com/dadorner-msft/ActivationWs/issues) or [contact me](https://github.com/login?return_to=https%3A%2F%2Fgithub.com%2Fdadorner-msft) should you have any question or need support.
+>[!TIP]
+>The following section contains answers to frequently asked questions. Please feel free to file an [issue](https://github.com/dadorner-msft/ActivationWs/issues) or [contact me](https://github.com/login?return_to=https%3A%2F%2Fgithub.com%2Fdadorner-msft) should you have any question or need support.
 
 ### To which external addresses does ActivationWs web service specifically need access to?
 
-ActivationWs web service requires access to the URL listed in the [requirement](#requirements) section.
+ActivationWs web service requires access to the URL listed in the [Requirements](#requirements) section.
 
-### After successfully deploying the licenses using ActivationWs, how can I verify the deployment of the extended security updates?
+### After successfully activating the ESU product using ActivationWs, how can I verify the deployment of the Extended Security Updates?
 
 Please take a look at [this blog article](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#), which outlines the available updates to verify the deployment.
 
-### Activate-Product.ps1 fails with "[Error] The product key is invalid"
+### Activate-Product.ps1 fails with an error
 
-- Check your product key
-- For the deployment of ESU licenses only: ensure that all of the [prerequisites](#installation-and-usage) are installed on your ESU eligible device
+| Error | How to fix it |
+|:---|:---|
+| The product key is invalid | - Check your MAK<br>- For the deployment of ESU MAKs only: ensure that all of the [prerequisites](#scenario-1-automated-activation) are installed on your ESU eligible device<br> <br>If it fails even though you followed these steps, please take a look at the following support article: [How to rebuild the Tokens.dat file when you troubleshoot Windows activation issues](https://support.microsoft.com/en-us/help/2736303) |
+| The Installation ID (IID) and the Confirmation ID (CID) do not match | For the deployment of ESU MAKs only: ensure that all of the [prerequisites](#scenario-1-automated-activation) are installed on your ESU eligible device |
+| (500) Internal Server Error | This is a "server-side" error, meaning that the ActivationWs web service couldn't acquire the Confirmation ID. Reasons include:<br>- The ActivationWs web service couldn't connect to the [required URL](#requirements)<br>- No activations are left on your MAK. Check the remaining activation count<br>- The specified WebServiceUrl is incorrect |
 
-If it fails even though you followed these steps, please take a look at the following support article: [How to rebuild the Tokens.dat file when you troubleshoot Windows activation issues](https://support.microsoft.com/en-us/help/2736303).
+### No activations are left on my MAK.
+Please contact [Volume Licensing Support](https://learn.microsoft.com/en-us/licensing/contact-us)
 
-### Activate-Product.ps1 fails with "[Error] The Installation ID (IID) and the Confirmation ID (CID) do not match"
+### We're using SCCM to deploy your script. Is there way to obfuscate or hide the MAK in the ConfigMgr logs?
 
-For the deployment of ESU licenses only: ensure that all of the [prerequisites](#installation-and-usage) are installed on your ESU eligible device
-
-### Activate-Product.ps1 fails with "[Warning] The remote server returned an error: (500) Internal Server Error"
-
-This is a "server-side" error, meaning that the ActivationWs web service couldn't acquire the Confirmation ID. Reasons include:
-- The ActivationWs web service couldn't connect to the [required URL](#requirements)
-- No MAK activations are left on your product key
-- The specified WebServiceUrl is incorrect
-
-### We're using SCCM to deploy your script. Is there way to obfuscate or hide the ESU key in the logs?
-
-You could create a task sequence (TS) variable that contains the MAK. Then modify the PowerShell script `Activate-Product.ps1` to not output the product key and create an instance of a COM object that represents the TS environment to read the variable, eg.
+You could create a task sequence (TS) variable that contains the MAK. Then modify the PowerShell script `Activate-Product.ps1` to not output the MAK and create an instance of a COM object that represents the TS environment to read the variable, eg.
 
 ```powershell
 $tsEnv = New-Object -COMObject Microsoft.SMS.TSEnvironment
 $productKey = $tsEnv.Value("PKEY")
 ```
-This would prevent the product key from showing up in the ConfigMgr log files.
-
-[Back to Overview](#overview)
+This would prevent the MAK from showing up in the ConfigMgr log files.
 
 ## Contributions are welcome
 
 There are many ways to contribute:
 
-1. Open a new bug report or feature request by opening a new issue [here](https://github.com/dadorner-msft/ActivationWs/issues/new/choose).
-2. Participate in the discussions of [issues](https://github.com/dadorner-msft/ActivationWs/issues), [pull requests](https://github.com/dadorner-msft/ActivationWs/pulls) and verify/test fixes or new features.
-3. Submit your own fixes or features as a pull request but please discuss it beforehand in an issue if the change is substantial.
-4. Submit test cases.
-
-[Back to Overview](#overview)
+1. Open a new bug report or feature request by opening a new issue [here](https://github.com/dadorner-msft/ActivationWs/issues/new/choose)
+2. Participate in the discussions of [issues](https://github.com/dadorner-msft/ActivationWs/issues), [pull requests](https://github.com/dadorner-msft/ActivationWs/pulls) and verify/test fixes or new features
+3. Submit your own fixes or features as a pull request but please discuss it beforehand in an issue if the change is substantial
+4. Submit test cases
 
 ## Code of Conduct
 
