@@ -48,8 +48,10 @@ The following animation demonstrates the MAK installation and activation of an E
 
 > [!NOTE]
 > For the deployment of ESU MAKs, please ensure that these prerequisites are met on your devices:
-> * [Prerequisites for Windows 7 and Windows Server 2008/2008 R2](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#)
+> * [Prerequisites for Windows 10](https://learn.microsoft.com/en-us/windows/whats-new/extended-security-updates)
 > * [Prerequisites for Windows Server 2012/2012 R2](https://support.microsoft.com/en-us/topic/kb5031043-procedure-to-continue-receiving-security-updates-after-extended-support-has-ended-on-october-10-2023-c1a20132-e34c-402d-96ca-1e785ed51d45)
+> * [Prerequisites for Windows 7 and Windows Server 2008/2008 R2](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#)
+
 
 
 ### Scenario 2: Manual activation
