@@ -14,7 +14,7 @@ Key benefits:
 [Requirements](#requirements) | [Installation and Usage](#installation-and-usage) | [FAQ](#faq) | [Contribution](#contributions-are-welcome) | [Code of Conduct](#code-of-conduct)
 
 ## How does ActivationWs work?
-ActivationWs made up of two components: an ASP.NET web service and a PowerShell script to install the MAK and activate the product.
+ActivationWs is made up of two components: an ASP.NET web service and a PowerShell script to install the MAK and activate the product.
 
 The following illustration shows a simplified version of the MAK deployment and product activation process:
 
@@ -89,7 +89,7 @@ Please take a look at [this blog article](https://techcommunity.microsoft.com/t5
 ### No activations are left on my MAK.
 Please contact [Volume Licensing Support](https://learn.microsoft.com/en-us/licensing/contact-us)
 
-### We're using SCCM to deploy your script. Is there way to obfuscate or hide the MAK in the ConfigMgr logs?
+### We're using SCCM to deploy your script. Is there a way to obfuscate or hide the MAK in the ConfigMgr logs?
 
 You could create a task sequence (TS) variable that contains the MAK. Then modify the PowerShell script `Activate-Product.ps1` to not output the MAK and create an instance of a COM object that represents the TS environment to read the variable, eg.
 
