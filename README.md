@@ -108,8 +108,4 @@ There are many ways to contribute:
 3. Submit your own fixes or features as a pull request but please discuss it beforehand in an issue if the change is substantial
 4. Submit test cases
 
-## Code of Conduct
-
-This project has adopted the [Microsoft Open Source Code of Conduct](CODE_OF_CONDUCT.md).
-
 [Back to Overview](#overview)
