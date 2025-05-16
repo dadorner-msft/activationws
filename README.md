@@ -11,7 +11,7 @@ Key benefits:
 - Easy to implement, time-saving, allows you to ensure business goals are realized, manages risks and delivers business value
 - Customizable and addresses privacy concerns, as the source code is available to the public
 
-[Requirements](#requirements) | [Installation and Usage](#installation-and-usage) | [FAQ](#faq) | [Contribution](#contributions-are-welcome) | [Code of Conduct](#code-of-conduct)
+[Requirements](#requirements) | [Installation and Usage](#installation-and-usage) | [FAQ](#faq) | [Contribution](#contributions-are-welcome)
 
 ## How does ActivationWs work?
 ActivationWs is made up of two components: an ASP.NET web service and a PowerShell script to install the MAK and activate the product.
@@ -107,5 +107,7 @@ There are many ways to contribute:
 2. Participate in the discussions of [issues](https://github.com/dadorner-msft/ActivationWs/issues), [pull requests](https://github.com/dadorner-msft/ActivationWs/pulls) and verify/test fixes or new features
 3. Submit your own fixes or features as a pull request but please discuss it beforehand in an issue if the change is substantial
 4. Submit test cases
+
+<br />
 
 [Back to Overview](#overview)
