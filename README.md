@@ -101,12 +101,14 @@ This would prevent the MAK from showing up in the ConfigMgr log files.
 
 ## Contributions are welcome
 
-There are many ways to contribute:
+You don’t have to be a developer to contribute to the project!
 
-1. Open a new bug report or feature request by opening a new issue [here](https://github.com/dadorner-msft/ActivationWs/issues/new/choose)
-2. Participate in the discussions of [issues](https://github.com/dadorner-msft/ActivationWs/issues), [pull requests](https://github.com/dadorner-msft/ActivationWs/pulls) and verify/test fixes or new features
-3. Submit your own fixes or features as a pull request but please discuss it beforehand in an issue if the change is substantial
-4. Submit test cases
+There are other ways to join the project including:
+
+1. Writing documentation
+2. Creating tutorials
+3. Bug reporting and triaging ([here](https://github.com/dadorner-msft/activationws/issues/new/choose))
+4. Feature testing
 
 <br />
 
