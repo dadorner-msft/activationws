@@ -1,4 +1,4 @@
-<img src="./doc/images/ActivationWs_logo_with_text.png" width="400" alt="Trusted by the world’s leading enterprises"/>
+<img src="./doc/images/Logo_color.png" width="400" alt="Trusted by the world’s leading enterprises"/>
 Welcome to the ActivationWs GitHub repository!
 
 ## Overview
