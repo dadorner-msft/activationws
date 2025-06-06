@@ -74,10 +74,6 @@ Activation steps:
 
 ActivationWs web service requires access to the URL listed in the [Requirements](#requirements) section.
 
-### After successfully activating the ESU product using ActivationWs, how can I verify the deployment of the Extended Security Updates?
-
-Please take a look at [this blog article](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/obtaining-extended-security-updates-for-eligible-windows-devices/ba-p/1167091#), which outlines the available updates to verify the deployment.
-
 ### Activate-Product.ps1 fails with an error
 
 | Error | How to fix it |
