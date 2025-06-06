@@ -86,8 +86,13 @@ Please take a look at [this blog article](https://techcommunity.microsoft.com/t5
 | The Installation ID (IID) and the Confirmation ID (CID) do not match | For the deployment of ESU MAKs only: ensure that all of the [prerequisites](#scenario-1-automated-activation) are installed on your ESU eligible device |
 | (500) Internal Server Error | This is a "server-side" error, meaning that the ActivationWs web service couldn't acquire the Confirmation ID. Reasons include:<br>- The ActivationWs web service couldn't connect to the [required URL](#requirements)<br>- No activations are left on your MAK. Check the remaining activation count<br>- The specified WebServiceUrl is incorrect |
 
-### No activations are left on my MAK.
-Please contact [Volume Licensing Support](https://learn.microsoft.com/en-us/licensing/contact-us)
+### No activations are left on my MAK
+Increases to MAK activation quantity are granted by exception. To request a MAK activation limit, you must have the VL Administrator, Key Administrator, or Key Viewer role. To submit the request, you must provide the following information on this [web form](https://support.serviceshub.microsoft.com/supportforbusiness/create?sapId=2afa6f15-b710-db46-909a-8346017c802f):
+- Agreement/Enrollment Number or License ID and Authorization
+- Product Name (including version and edition)
+- The last five characters of the product key
+- The number of host activations required
+- Business justification or reason for deployment
 
 ### We're using SCCM to deploy your script. Is there a way to obfuscate or hide the MAK in the ConfigMgr logs?
 
