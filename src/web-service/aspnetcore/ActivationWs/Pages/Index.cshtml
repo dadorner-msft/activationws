@@ -1,0 +1,141 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Use this page to perform a manual MAK activation or to check your remaining MAK activation count.</p>
+</div>
+
+<style>
+    .box {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+</style>
+
+<div class="box">
+
+    <fieldset class="mb-4">
+        <legend class="form-label">Select action:</legend>
+        <div>
+            <input type="radio" id="actionConfirmationId" name="actionType" value="confirmation" checked>
+            <label for="actionConfirmationId">Acquire Confirmation ID</label>
+        </div>
+        <div>
+            <input type="radio" id="actionActivationCount" name="actionType" value="count">
+            <label for="actionActivationCount">Retrieve remaining activation count</label>
+        </div>
+    </fieldset>
+
+
+    <form id="confirmationIdForm" class="mb-4">
+        <div class="mb-2">
+            <label for="hostName" class="form-label">Hostname</label>
+            <input type="text" id="hostName" class="form-control" required />
+        </div>
+        <div class="mb-2">
+            <label for="installationId" class="form-label">Installation ID</label>
+            <input type="text" id="installationId" class="form-control" required />
+        </div>
+        <div class="mb-2">
+            <label for="extendedProductId" class="form-label">Extended Product ID</label>
+            <input type="text" id="extendedProductId" class="form-control" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+    <div id="confirmationIdResult" class="alert alert-success d-none" aria-live="polite"></div>
+
+
+    <form id="activationCountForm" class="mb-4" style="display:none;">
+        <div class="mb-2">
+            <label for="activationCountProductId" class="form-label">Extended Product ID</label>
+            <input type="text" id="activationCountProductId" class="form-control" required />
+        </div>
+        <button type="submit" class="btn btn-secondary">Submit</button>
+    </form>
+    <div id="activationCountResult" class="alert alert-success d-none" aria-live="polite"></div>
+
+</div>
+
+
+@section Scripts {
+    <script>
+        function toggleForms() {
+            const isConfirmation = document.getElementById('actionConfirmationId').checked;
+
+            document.getElementById('confirmationIdResult').classList.add('d-none');
+            document.getElementById('activationCountResult').classList.add('d-none');
+
+            document.getElementById('confirmationIdForm').style.display = isConfirmation ? '' : 'none';
+            document.getElementById('activationCountForm').style.display = isConfirmation ? 'none' : '';
+        }
+
+        document.getElementById('actionConfirmationId').addEventListener('change', toggleForms);
+        document.getElementById('actionActivationCount').addEventListener('change', toggleForms);
+        toggleForms();
+
+        function showSpinner(target) {
+            target.innerHTML = `
+                <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+                Please wait...
+            `;
+            target.classList.remove('d-none', 'alert-danger', 'alert-success');
+        }
+
+        document.getElementById('confirmationIdForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+
+            const hostName = document.getElementById('hostName').value;
+            const installationId = document.getElementById('installationId').value;
+            const extendedProductId = document.getElementById('extendedProductId').value;
+            const resultDiv = document.getElementById('confirmationIdResult');
+
+            showSpinner(resultDiv);
+
+            try {
+                const response = await fetch(`/api/ActivationService/ConfirmationId?hostName=${encodeURIComponent(hostName)}&installationId=${encodeURIComponent(installationId)}&extendedProductId=${encodeURIComponent(extendedProductId)}`);
+                if (!response.ok) throw new Error(await response.text());
+                const data = await response.json();
+                resultDiv.textContent = `Confirmation ID: ${data.confirmationId} Cached: ${data.cached}`;
+                resultDiv.classList.add('alert-success');
+            } catch (err) {
+                resultDiv.textContent = `Error: ${err.message}`;
+                resultDiv.classList.add('alert-danger');
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+
+        document.getElementById('activationCountForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+
+            const extendedProductId = document.getElementById('activationCountProductId').value;
+            const resultDiv = document.getElementById('activationCountResult');
+
+            showSpinner(resultDiv);
+
+            try {
+                const response = await fetch(`/api/ActivationService/ActivationCount?extendedProductId=${encodeURIComponent(extendedProductId)}`);
+                if (!response.ok) throw new Error(await response.text());
+                const data = await response.json();
+                resultDiv.textContent = `Remaining activation count: ${data.remainingActivationCount}`;
+                resultDiv.classList.add('alert-success');
+            } catch (err) {
+                resultDiv.textContent = `Error: ${err.message}`;
+                resultDiv.classList.add('alert-danger');
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+    </script>
+}
