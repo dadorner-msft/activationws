@@ -14,7 +14,7 @@ Key benefits:
 [Requirements](#requirements) | [Installation and Usage](#installation-and-usage) | [FAQ](#faq) | [Contribution](#contributions-are-welcome)
 
 ## How does ActivationWs work?
-ActivationWs is made up of two components: an ASP.NET web service and a PowerShell script to install the MAK and activate the product.
+ActivationWs is made up of two components: an ASP.NET Core Web App and a PowerShell script to install the MAK and activate the product.
 
 The following illustration shows a simplified version of the MAK deployment and product activation process:
 
@@ -29,7 +29,6 @@ Activation steps:
 
 ## Requirements
 - ActivationWs web service runs on IIS and requires
-  - the .NET Framework 4.6 and ASP.NET modules
   - access to the Microsoft BatchActivation Service (`https://activation.sls.microsoft.com`). A proxy server can be specified in the web.config file, where necessary
 - `Activate-Product.ps1` requires Windows PowerShell 3.0 or later and needs to be executed with administrative rights
 
@@ -37,7 +36,7 @@ Activation steps:
 This section highlights some of the most frequent scenarios and guides you through the initial setup.
 
 ### Steps to deploy the ActivationWs web service:
-1. Build the solution (Visual Studio 2019 or later)
+1. Build the solution (Visual Studio 2022 or later)
 2. Deploy the ActivationWs web service to IIS
 
 ### Scenario 1: Automated activation
