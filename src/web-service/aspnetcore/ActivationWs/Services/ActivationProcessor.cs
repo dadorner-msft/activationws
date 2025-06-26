@@ -13,7 +13,7 @@ namespace ActivationWs.Services
 
         private static readonly Regex hostNameRegex = new Regex(@"^(?=.{1,253}$)(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.?)+$", RegexOptions.Compiled);
         private static readonly Regex installationIdRegex = new Regex(@"^\d{63}$", RegexOptions.Compiled);
-        private static readonly Regex extendedProductIdRegex = new Regex(@"^\d{5}-\d{5}-\d{3}-\d{6}-\d{2}-\d{4}-\d{4}\.\d{4}-\d{7}$", RegexOptions.Compiled);
+	private static readonly Regex extendedProductIdRegex = new Regex(@"^\d{5}-\d{5}-\d{3}-\d{6}-\d{2}-\d{4}-\d+\.\d{4}-\d{7}$", RegexOptions.Compiled);
 
         public ActivationProcessor(ILogger<ActivationProcessor> logger, ActivationDbContext context) {
             _logger = logger;
