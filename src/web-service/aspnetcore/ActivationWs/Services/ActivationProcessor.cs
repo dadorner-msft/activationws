@@ -1,4 +1,5 @@
 ﻿using ActivationWs.Data;
+using ActivationWs.Exceptions;
 using ActivationWs.Models;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,7 @@ namespace ActivationWs.Services
 
         private static readonly Regex hostNameRegex = new Regex(@"^(?=.{1,253}$)(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.?)+$", RegexOptions.Compiled);
         private static readonly Regex installationIdRegex = new Regex(@"^\d{63}$", RegexOptions.Compiled);
-	private static readonly Regex extendedProductIdRegex = new Regex(@"^\d{5}-\d{5}-\d{3}-\d{6}-\d{2}-\d{4}-\d+\.\d{4}-\d{7}$", RegexOptions.Compiled);
+        private static readonly Regex extendedProductIdRegex = new Regex(@"^\d{5}-\d{5}-\d{3}-\d{6}-\d{2}-\d{4}-\d+\.\d{4}-\d{7}$", RegexOptions.Compiled);
 
         public ActivationProcessor(ILogger<ActivationProcessor> logger, ActivationDbContext context) {
             _logger = logger;
@@ -67,16 +68,20 @@ namespace ActivationWs.Services
             // If not found in the database or DB query failed, call the web service
             string result;
             try {
-                _logger.LogInformation("About to retrieve the Confirmation ID from the Microsoft Batch Activation Service.");
+                _logger.LogInformation("About to retrieve the Confirmation ID from the Microsoft Batch Activation Service...");
                 result = await ActivationService.CallWebServiceAsync(1, installationId, extendedProductId);
 
             } catch (HttpRequestException httpEx) {
                 _logger.LogError(httpEx, "HTTP request to the Microsoft Batch Activation Service failed.");
-                throw new Exception("Unable to retrieve the Confirmation ID due to a network or service error.", httpEx);
+                throw new HttpRequestException(httpEx.Message);
+
+            } catch (BasException basEx ) {
+                _logger.LogError(basEx, "The Microsoft Batch Activation Service reported an error:");
+                throw new BasException(basEx.Message);
 
             } catch (Exception ex) {
-                _logger.LogError(ex, "An unexpected error occurred while retrieving the Confirmation ID from the Microsoft Batch Activation Service.");
-                throw new Exception("An internal error occurred while processing the request.", ex);
+                _logger.LogError(ex, "The Confirmation ID could not be retrieved from the Microsoft Batch Activation Service.");
+                throw new Exception(ex.Message);
             }
 
             // Try to save the Confirmation ID to the database
@@ -118,7 +123,11 @@ namespace ActivationWs.Services
 
             } catch (HttpRequestException httpEx) {
                 _logger.LogError(httpEx, "HTTP request to the Microsoft Batch Activation Service failed.");
-                throw new Exception(httpEx.Message);
+                throw new HttpRequestException(httpEx.Message);
+
+            } catch (BasException basEx) {
+                _logger.LogError(basEx, "The Microsoft Batch Activation Service reported an error:");
+                throw new BasException(basEx.Message);
 
             } catch (Exception ex) {
                 _logger.LogError(ex, "The remaining activation count could not be retrieved.");

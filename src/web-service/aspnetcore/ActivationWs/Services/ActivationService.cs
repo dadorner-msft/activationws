@@ -1,3 +1,4 @@
+using ActivationWs.Exceptions;
 using ActivationWs.Pages;
 using System.Net;
 using System.Security.Cryptography;
@@ -19,7 +20,7 @@ namespace ActivationWs.Services
             0,     0,   0,   0,   0,   0,   0,   0
         };
 
-        private const string Action = "http://www.microsoft.com/BatchActivationService/BatchActivate"; // <- Reverting back to the original action
+        private const string Action = "http://www.microsoft.com/BatchActivationService/BatchActivate";
         private static readonly Uri uri = new Uri("https://activation.sls.microsoft.com/BatchActivation/BatchActivation.asmx");
 
         private static readonly XNamespace soapSchemaNs = "http://schemas.xmlsoap.org/soap/envelope/";
@@ -39,8 +40,7 @@ namespace ActivationWs.Services
                 return ParseSoapResponse(soapResponse);
 
             } catch (HttpRequestException ex) {
-                // Handle specific HTTP request exceptions
-                throw new HttpRequestException("The Microsoft Batch Activation Service is unavailable.", ex, HttpStatusCode.ServiceUnavailable);
+                throw new HttpRequestException(ex.Message);
             }
         }
 
@@ -94,43 +94,48 @@ namespace ActivationWs.Services
 
         private static string ParseSoapResponse(XDocument soapResponse) {
             if (soapResponse == null) {
-                throw new ArgumentNullException(nameof(soapResponse), "The remote server returned an unexpected response.");
+                throw new ArgumentNullException(nameof(soapResponse), "The Microsoft Batch Activation Service returned an unexpected response.");
             }
 
             if (!soapResponse.Descendants(batchActivationServiceNs + "ResponseXml").Any()) {
-                throw new Exception("The remote server returned an unexpected response.");
+                throw new Exception("The Microsoft Batch Activation Service returned an unexpected response.");
             }
 
             try {
                 XDocument responseXml = XDocument.Parse(soapResponse.Descendants(batchActivationServiceNs + "ResponseXml").First().Value);
 
-                if (responseXml.Descendants(batchActivationResponseNs + "ErrorCode").Any()) {
+                if (responseXml.Descendants(batchActivationResponseNs + "ErrorCode").Any())
+                {
                     string errorCodeElement = responseXml.Descendants(batchActivationResponseNs + "ErrorCode").First().Value;
 
-                    switch (errorCodeElement) {
+                    switch (errorCodeElement)
+                    {
                         case "0x7F":
-                            throw new Exception("The Multiple Activation Key has exceeded its limit.");
+                            throw new BasException("The Multiple Activation Key has exceeded its limit.");
 
                         case "0x67":
-                            throw new Exception("The product key has been blocked.");
+                            throw new BasException("The product key has been blocked.");
 
                         case "0x68":
-                            throw new Exception("Invalid product key.");
+                            throw new BasException("Invalid product key.");
 
                         case "0x86":
-                            throw new Exception("Invalid key type.");
+                            throw new BasException("Invalid key type.");
 
                         case "0x90":
-                            throw new Exception("Please check the Installation ID and try again.");
+                            throw new BasException("Please check the Installation ID and try again.");
 
                         default:
-                            throw new Exception("The remote server reported an error (" + errorCodeElement + ").");
+                            throw new BasException(errorCodeElement);
                     }
 
-                } else if (responseXml.Descendants(batchActivationResponseNs + "ResponseType").Any()) {
+                }
+                else if (responseXml.Descendants(batchActivationResponseNs + "ResponseType").Any())
+                {
                     string responseType = responseXml.Descendants(batchActivationResponseNs + "ResponseType").First().Value;
 
-                    switch (responseType) {
+                    switch (responseType)
+                    {
                         case "1":
                             return responseXml.Descendants(batchActivationResponseNs + "CID").First().Value;
 
@@ -138,13 +143,19 @@ namespace ActivationWs.Services
                             return responseXml.Descendants(batchActivationResponseNs + "ActivationRemaining").First().Value;
 
                         default:
-                            throw new Exception("The remote server returned an unrecognized response.");
+                            throw new Exception("The Microsoft Batch Activation Service returned an unrecognized response.");
                     }
 
-                } else {
-                    throw new Exception("The remote server returned an unrecognized response.");
+                }
+                else
+                {
+                    throw new Exception("The Microsoft Batch Activation Service returned an unrecognized response.");
                 }
 
+
+            } catch (BasException basEx) { 
+                throw new BasException(basEx.Message);
+            
             } catch (Exception ex) {
                 throw new Exception(ex.Message);
             }

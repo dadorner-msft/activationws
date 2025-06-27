@@ -1,3 +1,4 @@
+using ActivationWs.Exceptions;
 using ActivationWs.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -28,21 +29,28 @@ namespace ActivationWs.Controllers
 
             } catch (ArgumentException argEx) {
                 return Problem(
-                    title: "Invalid input.",
+                    title: "ArgumentException",
                     detail: argEx.Message,
                     statusCode: StatusCodes.Status400BadRequest
                 );
 
             } catch (HttpRequestException httpEx) {
                 return Problem(
-                    title: "External service error.",
+                    title: "HttpRequestException",
                     detail: httpEx.Message,
                     statusCode: StatusCodes.Status503ServiceUnavailable
                 );
 
+            } catch (BasException basEx) {
+                return Problem(
+                    title: "BasException",
+                    detail: basEx.Message,
+                    statusCode: StatusCodes.Status409Conflict
+                );
+
             } catch (Exception ex) {
                 return Problem(
-                    title: "An unexpected error occurred.",
+                    title: "An unexpected error occurred",
                     detail: ex.Message,
                     statusCode: StatusCodes.Status500InternalServerError
                 );
@@ -60,21 +68,28 @@ namespace ActivationWs.Controllers
 
             } catch (ArgumentException argEx) {
                 return Problem(
-                    title: "Invalid input.",
+                    title: "ArgumentException",
                     detail: argEx.Message,
                     statusCode: StatusCodes.Status400BadRequest
                 );
 
             } catch (HttpRequestException httpEx) {
                 return Problem(
-                    title: "External service error.",
+                    title: "HttpRequestException",
                     detail: httpEx.Message,
                     statusCode: StatusCodes.Status503ServiceUnavailable
                 );
 
+            } catch (BasException basEx) {
+                return Problem(
+                    title: "BasException",
+                    detail: basEx.Message,
+                    statusCode: StatusCodes.Status409Conflict
+                );
+
             } catch (Exception ex) {
                 return Problem(
-                    title: "An unexpected error occurred.",
+                    title: "An unexpected error occurred",
                     detail: ex.Message,
                     statusCode: StatusCodes.Status500InternalServerError
                 );
