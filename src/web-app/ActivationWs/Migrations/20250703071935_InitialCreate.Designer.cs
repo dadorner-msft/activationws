@@ -11,14 +11,14 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ActivationWs.Migrations
 {
     [DbContext(typeof(ActivationDbContext))]
-    [Migration("20250625045634_InitialCreate")]
+    [Migration("20250703071935_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.5");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.6");
 
             modelBuilder.Entity("ActivationWs.Models.ActivationRecord", b =>
                 {
