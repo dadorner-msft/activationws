@@ -26,14 +26,14 @@ The following illustration shows a simplified version of the MAK deployment and 
 ### Activation Flow:
 1. The PowerShell script is deployed to your devices using ConfigMgr or a deployment tool of your choice
 2. The script installs the MAK and queries the respective Installation- and Product IDs. It then sends the data to the ActivationWs web app. Communication between the device and the ActivationWs web app takes place over a port of your choice, e.g. 80/443
-3. Installation- and Product IDs are transmitted to the Microsoft BatchActivation Service
+3. Installation- and Product IDs are transmitted to the Microsoft licensing server
 4. A Confirmation ID is subsequently returned to the ActivationWs web app
 5. ActivationWs web app returns the Confirmation ID to the device. The script deposits the Confirmation ID and concludes the product activation
 
 ---
 
 ## Requirements
-- The ActivationWs web app needs access to the Microsoft BatchActivation Service (`https://activation.sls.microsoft.com`)
+- The ActivationWs web app needs access to the Microsoft licensing server (`https://activation.sls.microsoft.com`)
 - To host the ActivationWs web app on IIS, install the [ASP.NET Core Module](https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/?view=aspnetcore-9.0)
 - `Activate-Product.ps1` requires Windows PowerShell 3.0 or later and needs to be executed with administrative rights
 
@@ -57,7 +57,7 @@ This section highlights some of the most frequent scenarios and guides you throu
 #### Scenario #1: Automated activation
 Deploy `Activate-Product.ps1` to your devices. The following animation demonstrates the MAK installation and activation of an ESU product:
 
-![Animation demonstrating the installation and activation of an ESU product](./doc/images/activate-product-v0.25.1.gif)
+![Animation demonstrating the installation and activation of an ESU product](./doc/images/activate-product.gif)
 
 #### Scenario #2: Manual activation (air-gapped devices)
 1. Open the ActivationWs home page
