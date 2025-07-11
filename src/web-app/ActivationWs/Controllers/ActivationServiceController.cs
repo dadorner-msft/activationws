@@ -17,15 +17,15 @@ namespace ActivationWs.Controllers
         }
 
         // Endpoint to retrieve a ConfirmationId
-        [HttpGet("ConfirmationId")]
-        public async Task<ActionResult<object>> GetConfirmationId(
+        [HttpGet("ConfirmationID")]
+        public async Task<ActionResult<object>> GetConfirmationID(
             [FromQuery] string hostName,
-            [FromQuery] string installationId,
-            [FromQuery] string extendedProductId)
+            [FromQuery] string installationID,
+            [FromQuery] string extendedProductID)
         {
             try {
-                var (confirmationId, cached) = await _activationManager.GetConfirmationIdAsync(hostName, installationId, extendedProductId);
-                return Ok(new { confirmationId, cached });
+                var confirmationID = await _activationManager.GetConfirmationIDAsync(hostName, installationID, extendedProductID);
+                return Ok(new { confirmationID });
 
             } catch (ArgumentException argEx) {
                 return Problem(
@@ -60,10 +60,10 @@ namespace ActivationWs.Controllers
         // Endpoint to retrieve the remaining activation count
         [HttpGet("ActivationCount")]
         public async Task<ActionResult<object>> GetRemainingActivationCount(
-            [FromQuery] string extendedProductId)
+            [FromQuery] string extendedProductID)
         {
             try {
-                var result = await _activationManager.GetRemainingActivationCountAsync(extendedProductId);
+                var result = await _activationManager.GetRemainingActivationCountAsync(extendedProductID);
                 return Ok(new { remainingActivationCount = result });
 
             } catch (ArgumentException argEx) {

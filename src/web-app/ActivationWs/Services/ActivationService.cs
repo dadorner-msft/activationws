@@ -32,8 +32,8 @@ namespace ActivationWs.Services
 
         private static readonly HttpClient httpClient = new HttpClient();
 
-        public static async Task<string> CallWebServiceAsync(int requestType, string installationId, string extendedProductId) {
-            XDocument soapRequest = CreateSoapRequest(requestType, installationId, extendedProductId);
+        public static async Task<string> CallWebServiceAsync(int requestType, string installationID, string extendedProductID) {
+            XDocument soapRequest = CreateSoapRequest(requestType, installationID, extendedProductID);
 
             try {
                 XDocument soapResponse = await SendHttpRequestAsync(soapRequest);
@@ -44,14 +44,14 @@ namespace ActivationWs.Services
             }
         }
 
-        private static XDocument CreateSoapRequest(int requestType, string installationId, string extendedProductId) {
+        private static XDocument CreateSoapRequest(int requestType, string installationID, string extendedProductID) {
             XElement activationRequest = new XElement(batchActivationRequestNs + "ActivationRequest",
                 new XElement(batchActivationRequestNs + "VersionNumber", "2.0"),
                 new XElement(batchActivationRequestNs + "RequestType", requestType),
                 new XElement(batchActivationRequestNs + "Requests",
                     new XElement(batchActivationRequestNs + "Request",
-                        new XElement(batchActivationRequestNs + "PID", extendedProductId),
-                        requestType == 1 ? new XElement(batchActivationRequestNs + "IID", installationId) : null)
+                        new XElement(batchActivationRequestNs + "PID", extendedProductID),
+                        requestType == 1 ? new XElement(batchActivationRequestNs + "IID", installationID) : null)
                 )
             );
 
@@ -94,11 +94,11 @@ namespace ActivationWs.Services
 
         private static string ParseSoapResponse(XDocument soapResponse) {
             if (soapResponse == null) {
-                throw new ArgumentNullException(nameof(soapResponse), "The Microsoft Batch Activation Service returned an unexpected response.");
+                throw new ArgumentNullException(nameof(soapResponse), "The Microsoft Activation Service returned an unexpected response.");
             }
 
             if (!soapResponse.Descendants(batchActivationServiceNs + "ResponseXml").Any()) {
-                throw new Exception("The Microsoft Batch Activation Service returned an unexpected response.");
+                throw new Exception("The Microsoft Activation Service returned an unexpected response.");
             }
 
             try {
@@ -143,13 +143,13 @@ namespace ActivationWs.Services
                             return responseXml.Descendants(batchActivationResponseNs + "ActivationRemaining").First().Value;
 
                         default:
-                            throw new Exception("The Microsoft Batch Activation Service returned an unrecognized response.");
+                            throw new Exception("The Microsoft Activation Service returned an unrecognized response.");
                     }
 
                 }
                 else
                 {
-                    throw new Exception("The Microsoft Batch Activation Service returned an unrecognized response.");
+                    throw new Exception("The Microsoft Activation Service returned an unrecognized response.");
                 }
 
 
@@ -157,7 +157,7 @@ namespace ActivationWs.Services
                 throw new BasException(basEx.Message);
             
             } catch (Exception ex) {
-                throw new Exception(ex.Message);
+                throw new Exception(ex.Message, ex);
             }
         }
     }

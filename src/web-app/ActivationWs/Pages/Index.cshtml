@@ -24,8 +24,8 @@
     <fieldset class="mb-4">
         <legend class="form-label">Select action:</legend>
         <div>
-            <input type="radio" id="actionConfirmationId" name="actionType" value="confirmation" checked>
-            <label for="actionConfirmationId">Acquire Confirmation ID</label>
+            <input type="radio" id="actionConfirmationID" name="actionType" value="confirmation" checked>
+            <label for="actionConfirmationID">Acquire Confirmation ID</label>
         </div>
         <div>
             <input type="radio" id="actionActivationCount" name="actionType" value="count">
@@ -34,28 +34,28 @@
     </fieldset>
 
 
-    <form id="confirmationIdForm" class="mb-4">
+    <form id="confirmationIDForm" class="mb-4">
         <div class="mb-2">
             <label for="hostName" class="form-label">Hostname</label>
             <input type="text" id="hostName" class="form-control" required />
         </div>
         <div class="mb-2">
-            <label for="installationId" class="form-label">Installation ID</label>
-            <input type="text" id="installationId" class="form-control" required />
+            <label for="installationID" class="form-label">Installation ID</label>
+            <input type="text" id="installationID" class="form-control" required />
         </div>
         <div class="mb-2">
-            <label for="extendedProductId" class="form-label">Extended Product ID</label>
-            <input type="text" id="extendedProductId" class="form-control" required />
+            <label for="extendedProductID" class="form-label">Extended Product ID</label>
+            <input type="text" id="extendedProductID" class="form-control" required />
         </div>
         <button type="submit" class="btn btn-primary">Submit</button>
     </form>
-    <div id="confirmationIdResult" class="alert alert-success d-none" aria-live="polite"></div>
+    <div id="confirmationIDResult" class="alert alert-success d-none" aria-live="polite"></div>
 
 
     <form id="activationCountForm" class="mb-4" style="display:none;">
         <div class="mb-2">
-            <label for="activationCountProductId" class="form-label">Extended Product ID</label>
-            <input type="text" id="activationCountProductId" class="form-control" required />
+            <label for="activationCountProductID" class="form-label">Extended Product ID</label>
+            <input type="text" id="activationCountProductID" class="form-control" required />
         </div>
         <button type="submit" class="btn btn-secondary">Submit</button>
     </form>
@@ -67,16 +67,16 @@
 @section Scripts {
     <script>
         function toggleForms() {
-            const isConfirmation = document.getElementById('actionConfirmationId').checked;
+            const isConfirmation = document.getElementById('actionConfirmationID').checked;
 
-            document.getElementById('confirmationIdResult').classList.add('d-none');
+            document.getElementById('confirmationIDResult').classList.add('d-none');
             document.getElementById('activationCountResult').classList.add('d-none');
 
-            document.getElementById('confirmationIdForm').style.display = isConfirmation ? '' : 'none';
+            document.getElementById('confirmationIDForm').style.display = isConfirmation ? '' : 'none';
             document.getElementById('activationCountForm').style.display = isConfirmation ? 'none' : '';
         }
 
-        document.getElementById('actionConfirmationId').addEventListener('change', toggleForms);
+        document.getElementById('actionConfirmationID').addEventListener('change', toggleForms);
         document.getElementById('actionActivationCount').addEventListener('change', toggleForms);
         toggleForms();
 
@@ -88,23 +88,23 @@
             target.classList.remove('d-none', 'alert-danger', 'alert-success');
         }
 
-        document.getElementById('confirmationIdForm').addEventListener('submit', async function (e) {
+        document.getElementById('confirmationIDForm').addEventListener('submit', async function (e) {
             e.preventDefault();
             const submitButton = this.querySelector('button[type="submit"]');
             submitButton.disabled = true;
 
             const hostName = document.getElementById('hostName').value;
-            const installationId = document.getElementById('installationId').value;
-            const extendedProductId = document.getElementById('extendedProductId').value;
-            const resultDiv = document.getElementById('confirmationIdResult');
+            const installationID = document.getElementById('installationID').value;
+            const extendedProductID = document.getElementById('extendedProductID').value;
+            const resultDiv = document.getElementById('confirmationIDResult');
 
             showSpinner(resultDiv);
 
             try {
-                const response = await fetch(`/api/ActivationService/ConfirmationId?hostName=${encodeURIComponent(hostName)}&installationId=${encodeURIComponent(installationId)}&extendedProductId=${encodeURIComponent(extendedProductId)}`);
+                const response = await fetch(`/api/ActivationService/ConfirmationId?hostName=${encodeURIComponent(hostName)}&installationID=${encodeURIComponent(installationID)}&extendedProductID=${encodeURIComponent(extendedProductID)}`);
                 if (!response.ok) throw new Error(await response.text());
                 const data = await response.json();
-                resultDiv.textContent = `Confirmation ID: ${data.confirmationId} Cached: ${data.cached}`;
+                resultDiv.textContent = `Confirmation ID: ${data.confirmationID}`;
                 resultDiv.classList.add('alert-success');
             } catch (err) {
                 resultDiv.textContent = `Error: ${err.message}`;
@@ -119,13 +119,13 @@
             const submitButton = this.querySelector('button[type="submit"]');
             submitButton.disabled = true;
 
-            const extendedProductId = document.getElementById('activationCountProductId').value;
+            const extendedProductID = document.getElementById('activationCountProductID').value;
             const resultDiv = document.getElementById('activationCountResult');
 
             showSpinner(resultDiv);
 
             try {
-                const response = await fetch(`/api/ActivationService/ActivationCount?extendedProductId=${encodeURIComponent(extendedProductId)}`);
+                const response = await fetch(`/api/ActivationService/ActivationCount?extendedProductID=${encodeURIComponent(extendedProductID)}`);
                 if (!response.ok) throw new Error(await response.text());
                 const data = await response.json();
                 resultDiv.textContent = `Remaining activation count: ${data.remainingActivationCount}`;

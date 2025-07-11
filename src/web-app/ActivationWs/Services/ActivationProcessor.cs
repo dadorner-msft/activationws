@@ -13,120 +13,115 @@ namespace ActivationWs.Services
         private readonly ActivationDbContext _context;
 
         private static readonly Regex hostNameRegex = new Regex(@"^(?=.{1,253}$)(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.?)+$", RegexOptions.Compiled);
-        private static readonly Regex installationIdRegex = new Regex(@"^\d{63}$", RegexOptions.Compiled);
-        private static readonly Regex extendedProductIdRegex = new Regex(@"^\d{5}-\d{5}-\d{3}-\d{6}-\d{2}-\d{4}-\d+\.\d{4}-\d{7}$", RegexOptions.Compiled);
+        private static readonly Regex installationIDRegex = new Regex(@"^\d{63}$", RegexOptions.Compiled);
+        private static readonly Regex extendedProductIDRegex = new Regex(@"^\d{5}-\d{5}-\d{3}-\d{6}-\d{2}-\d{4}-\d+\.\d{4}-\d{7}$", RegexOptions.Compiled);
 
         public ActivationProcessor(ILogger<ActivationProcessor> logger, ActivationDbContext context) {
             _logger = logger;
             _context = context;
         }
 
-        public async Task<(string confirmationId, bool cached)> GetConfirmationIdAsync(string hostName, string installationId, string extendedProductId) {
+        public async Task<string> GetConfirmationIDAsync(string hostName, string installationID, string extendedProductID) {
             if (!hostNameRegex.IsMatch(hostName)) {
                 _logger.LogError("The format of the hostname ({0}) is invalid.", hostName);
                 throw new ArgumentException("The format of the hostname is invalid.");
             }
 
-            if (!installationIdRegex.IsMatch(installationId)) {
-                _logger.LogError("The format of the Installation ID ({0}) is invalid.", installationId);
+            if (!installationIDRegex.IsMatch(installationID)) {
+                _logger.LogError("The format of the Installation ID ({0}) is invalid.", installationID);
                 throw new ArgumentException("The format of the Installation ID is invalid.");
             }
 
-            if (!extendedProductIdRegex.IsMatch(extendedProductId)) {
-                _logger.LogError("The format of the Extended Product ID ({0}) is invalid.", extendedProductId);
+            if (!extendedProductIDRegex.IsMatch(extendedProductID)) {
+                _logger.LogError("The format of the Extended Product ID ({0}) is invalid.", extendedProductID);
                 throw new ArgumentException("The format of the Extended Product ID is invalid.");
             }
 
             // Try to read from the database, but continue if it fails
             try {
                 var existingRecord = await _context.ActivationRecords
-                    .FirstOrDefaultAsync(r => r.InstallationId == installationId && r.ExtendedProductId == extendedProductId);
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(r => r.InstallationID == installationID && r.ExtendedProductID == extendedProductID);
 
                 if (existingRecord != null) {
-                    existingRecord.LastRequestDate = DateTime.UtcNow;
-
-                    if (!string.Equals(existingRecord.Hostname, hostName, StringComparison.Ordinal)) {
-                        _logger.LogInformation("Hostname updated for InstallationId={0}, ExtendedProductId={1}: {2} -> {3}", installationId, extendedProductId, existingRecord.Hostname, hostName);
-                        existingRecord.Hostname = hostName;
-                    }
-
-                    try {
-                        await _context.SaveChangesAsync();
-
-                    } catch (DbException dbEx) {
-                        _logger.LogWarning(dbEx.Message, "Unable to update the ActivationRecord in the database.");
-                    }
-
                     _logger.LogInformation("The Confirmation ID has been retrieved from the database.");
-                    return (existingRecord.ConfirmationId, true);
+                    return existingRecord.ConfirmationID;
                 }
             }
             catch (DbException dbEx) {
-                _logger.LogWarning(dbEx.Message, "Unable to retrieve the Confirmation ID from the database.");
+                _logger.LogWarning(dbEx.Message, "Failed to retrieve the Confirmation ID from the database.");
             }
 
             // If not found in the database or DB query failed, call the web service
             string result;
             try {
-                _logger.LogInformation("About to retrieve the Confirmation ID from the Microsoft Batch Activation Service...");
-                result = await ActivationService.CallWebServiceAsync(1, installationId, extendedProductId);
+                _logger.LogInformation("About to acquire the Confirmation ID from the Microsoft Activation Service...");
+                result = await ActivationService.CallWebServiceAsync(1, installationID, extendedProductID);
 
-            } catch (HttpRequestException httpEx) {
-                _logger.LogError(httpEx, "HTTP request to the Microsoft Batch Activation Service failed.");
+                if (!string.IsNullOrEmpty(result)) {
+                    // Find or create the machine by hostname
+                    var machine = await _context.Machines.FirstOrDefaultAsync(m => m.Hostname == hostName);
+                    if (machine == null)
+                    {
+                        machine = new Machine { Hostname = hostName };
+                        _context.Machines.Add(machine);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    // Save the Confirmation ID to the database
+                    try {
+                        var newRecord = new ActivationRecord
+                        {
+                            MachineId = machine.Id,
+                            InstallationID = installationID,
+                            ExtendedProductID = extendedProductID,
+                            ConfirmationID = result,
+                            LicenseAcquisitionDate = DateTime.UtcNow
+                        };
+
+                        _context.ActivationRecords.Add(newRecord);
+                        await _context.SaveChangesAsync();
+
+                        _logger.LogInformation("A new record has been added to the database: Hostname={0}, InstallationID={1}, ExtendedProductID={2}, ConfirmationID={3}", hostName, installationID, extendedProductID, result);
+                    }
+                    catch (Exception dbEx) {
+                        _logger.LogWarning(dbEx, "Failed to save the new ActivationRecord to the database.");
+                    }
+                }
+            }
+            catch (HttpRequestException httpEx) {
+                _logger.LogError(httpEx, "HTTP request to the Microsoft Activation Service failed.");
                 throw new HttpRequestException(httpEx.Message);
 
-            } catch (BasException basEx ) {
-                _logger.LogError(basEx, "The Microsoft Batch Activation Service reported an error:");
+            } catch (BasException basEx) {
+                _logger.LogError(basEx, "The Microsoft Activation Service reported an error:");
                 throw new BasException(basEx.Message);
 
             } catch (Exception ex) {
-                _logger.LogError(ex, "The Confirmation ID could not be retrieved from the Microsoft Batch Activation Service.");
+                _logger.LogError(ex, "Failed to acquire the Confirmation ID from the Microsoft Activation Service.");
                 throw new Exception(ex.Message);
             }
 
-            // Try to save the Confirmation ID to the database
-            try {
-                var newRecord = new ActivationRecord
-                {
-                    Hostname = hostName,
-                    InstallationId = installationId,
-                    ExtendedProductId = extendedProductId,
-                    ConfirmationId = result,
-                    ActivationDate = DateTime.UtcNow,
-                    LastRequestDate = DateTime.UtcNow,
-                    LicenseStatus = ""
-                };
-
-                _context.ActivationRecords.Add(newRecord);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("A new record has been added to the database: Hostname={0}, InstallationId={1}, ExtendedProductId={2}, ConfirmationId={3}", hostName, installationId, extendedProductId, result);
-
-            } catch (Exception dbEx) {
-                // Do not throw, just log and continue
-                _logger.LogWarning(dbEx, "Unable to save the new ActivationRecord to the database.");
-            }
-
-            return (result, false);
+            return result;
         }
 
-        public async Task<string> GetRemainingActivationCountAsync(string extendedProductId) {
-            if (!extendedProductIdRegex.IsMatch(extendedProductId)) {
-                _logger.LogError("The format of the Extended Product ID ({0}) is invalid.", extendedProductId);
+        public async Task<string> GetRemainingActivationCountAsync(string extendedProductID) {
+            if (!extendedProductIDRegex.IsMatch(extendedProductID)) {
+                _logger.LogError("The format of the Extended Product ID ({0}) is invalid.", extendedProductID);
                 throw new ArgumentException("The format of the Extended Product ID is invalid.");
             }
 
             try {
-                var result = await ActivationService.CallWebServiceAsync(2, "", extendedProductId);
+                var result = await ActivationService.CallWebServiceAsync(2, "", extendedProductID);
                 _logger.LogInformation("The remaining activation count is: {0}.", result);
                 return result;
 
             } catch (HttpRequestException httpEx) {
-                _logger.LogError(httpEx, "HTTP request to the Microsoft Batch Activation Service failed.");
+                _logger.LogError(httpEx, "HTTP request to the Microsoft Activation Service failed.");
                 throw new HttpRequestException(httpEx.Message);
 
             } catch (BasException basEx) {
-                _logger.LogError(basEx, "The Microsoft Batch Activation Service reported an error:");
+                _logger.LogError(basEx, "The Microsoft Activation Service reported an error:");
                 throw new BasException(basEx.Message);
 
             } catch (Exception ex) {
