@@ -8,6 +8,7 @@ Welcome to the ActivationWs GitHub repository!
 ### Key Benefits
 - **Automates MAK deployment** for organizations of any size
 - **Pull-based activation**: Devices request activation, reducing manual steps and obstacles
+- **Centralized storage of activation data**: Monitor the status of activations and support non-persistent environments like VDI or lab setups, where machines are frequently reimaged or reset
 - **Customizable and privacy-friendly**: Full source code is available for review and modification
 - **Easy to implement**: Integrates with deployment tools like ConfigMgr or custom solutions
 
