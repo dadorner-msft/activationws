@@ -34,8 +34,8 @@ The following illustration shows a simplified version of the MAK deployment and 
 ---
 
 ## Requirements
-- The ActivationWs web app needs access to the Microsoft Activation Service (`https://activation.sls.microsoft.com`)
-- To host the ActivationWs web app on IIS, install the [ASP.NET Core Module](https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/?view=aspnetcore-9.0)
+- The ActivationWs web app needs access to the Microsoft Activation Service (`https://activation.sls.microsoft.com`). A proxy server can be specified in the appsettings.json file, where necessary
+- To host the ActivationWs web app on IIS, install the [ASP.NET Core Hosting Bundle](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
 - `Activate-Product.ps1` requires Windows PowerShell 3.0 or later and needs to be executed with administrative rights
 
 ---

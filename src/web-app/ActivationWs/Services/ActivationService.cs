@@ -1,5 +1,5 @@
 using ActivationWs.Exceptions;
-using ActivationWs.Pages;
+using Microsoft.Extensions.Options;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -7,7 +7,12 @@ using System.Xml.Linq;
 
 namespace ActivationWs.Services
 {
-    public static class ActivationService {
+    public class ActivationService
+    {
+        private readonly HttpClient _httpClient;
+        private readonly ILogger<ActivationService> _logger;
+        private readonly ActivationServiceOptions _options;
+
         // Key for HMAC/SHA256 signature.
         private static readonly byte[] macKey = new byte[64] {
             254,  49, 152, 117, 251,  72, 132, 134,
@@ -30,17 +35,43 @@ namespace ActivationWs.Services
         private static readonly XNamespace batchActivationRequestNs = "http://www.microsoft.com/DRM/SL/BatchActivationRequest/1.0";
         private static readonly XNamespace batchActivationResponseNs = "http://www.microsoft.com/DRM/SL/BatchActivationResponse/1.0";
 
-        private static readonly HttpClient httpClient = new HttpClient();
+        public ActivationService(HttpClient httpClient,
+                                 IOptions<ActivationServiceOptions> options,
+                                 ILogger<ActivationService> logger)
+        {
+            _httpClient = httpClient;
+            _logger = logger;
+            _options = options.Value;
+            _httpClient.Timeout = TimeSpan.FromSeconds(_options.TimeoutSeconds <= 0 ? 100 : _options.TimeoutSeconds);
+        }
 
-        public static async Task<string> CallWebServiceAsync(int requestType, string installationID, string extendedProductID) {
+        public async Task<string> CallWebServiceAsync(int requestType, string installationID, string extendedProductID)
+        {
+            _logger.LogInformation("Calling Microsoft Activation Service...");
+
             XDocument soapRequest = CreateSoapRequest(requestType, installationID, extendedProductID);
 
             try {
                 XDocument soapResponse = await SendHttpRequestAsync(soapRequest);
-                return ParseSoapResponse(soapResponse);
+                string result = ParseSoapResponse(soapResponse);
+
+                if (string.IsNullOrEmpty(result)) {
+                    _logger.LogError("Microsoft Activation Service returned empty or null response");
+                    throw new InvalidOperationException("The Microsoft Activation Service returned an empty or null response.");
+                }
+                
+                _logger.LogInformation("Successfully processed activation request for ProductID: {ProductID}", extendedProductID);
+                return result;
 
             } catch (HttpRequestException ex) {
-                throw new HttpRequestException(ex.Message);
+                _logger.LogError(ex, "HTTP error occurred while calling Microsoft Activation Service");
+                throw;
+            } catch (BasException ex) {
+                _logger.LogWarning(ex, "Business activation error for ProductID: {ProductID}", extendedProductID);
+                throw;
+            } catch (Exception ex) {
+                _logger.LogError(ex, "Unexpected error occurred while processing activation");
+                throw;
             }
         }
 
@@ -80,12 +111,12 @@ namespace ActivationWs.Services
             }
         }
 
-        private static async Task<XDocument> SendHttpRequestAsync(XDocument soapRequest) {
+        private async Task<XDocument> SendHttpRequestAsync(XDocument soapRequest) {
             using (HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Post, uri)) {
                 requestMessage.Content = new StringContent(soapRequest.ToString(), Encoding.UTF8, "text/xml");
                 requestMessage.Headers.Add("SOAPAction", Action);
 
-                HttpResponseMessage response = await httpClient.SendAsync(requestMessage);
+                HttpResponseMessage response = await _httpClient.SendAsync(requestMessage);
                 response.EnsureSuccessStatusCode();
                 string responseContent = await response.Content.ReadAsStringAsync();
                 return XDocument.Parse(responseContent);
@@ -98,66 +129,51 @@ namespace ActivationWs.Services
             }
 
             if (!soapResponse.Descendants(batchActivationServiceNs + "ResponseXml").Any()) {
-                throw new Exception("The Microsoft Activation Service returned an unexpected response.");
+                throw new InvalidOperationException("The Microsoft Activation Service returned an unexpected response.");
             }
 
             try {
                 XDocument responseXml = XDocument.Parse(soapResponse.Descendants(batchActivationServiceNs + "ResponseXml").First().Value);
 
-                if (responseXml.Descendants(batchActivationResponseNs + "ErrorCode").Any())
-                {
+                if (responseXml.Descendants(batchActivationResponseNs + "ErrorCode").Any()) {
                     string errorCodeElement = responseXml.Descendants(batchActivationResponseNs + "ErrorCode").First().Value;
 
-                    switch (errorCodeElement)
-                    {
+                    switch (errorCodeElement) {
                         case "0x7F":
                             throw new BasException("The Multiple Activation Key has exceeded its limit.");
-
                         case "0x67":
                             throw new BasException("The product key has been blocked.");
-
                         case "0x68":
                             throw new BasException("Invalid product key.");
-
                         case "0x86":
                             throw new BasException("Invalid key type.");
-
                         case "0x90":
                             throw new BasException("Please check the Installation ID and try again.");
-
                         default:
                             throw new BasException(errorCodeElement);
                     }
 
-                }
-                else if (responseXml.Descendants(batchActivationResponseNs + "ResponseType").Any())
-                {
+                } else if (responseXml.Descendants(batchActivationResponseNs + "ResponseType").Any()) {
                     string responseType = responseXml.Descendants(batchActivationResponseNs + "ResponseType").First().Value;
 
-                    switch (responseType)
-                    {
+                    switch (responseType) {
                         case "1":
                             return responseXml.Descendants(batchActivationResponseNs + "CID").First().Value;
-
                         case "2":
                             return responseXml.Descendants(batchActivationResponseNs + "ActivationRemaining").First().Value;
-
                         default:
-                            throw new Exception("The Microsoft Activation Service returned an unrecognized response.");
+                            throw new InvalidOperationException("The Microsoft Activation Service returned an unrecognized response.");
                     }
 
-                }
-                else
-                {
-                    throw new Exception("The Microsoft Activation Service returned an unrecognized response.");
+                } else {
+                    throw new InvalidOperationException("The Microsoft Activation Service returned an unrecognized response.");
                 }
 
+            } catch (BasException) {
+                throw;
 
-            } catch (BasException basEx) { 
-                throw new BasException(basEx.Message);
-            
             } catch (Exception ex) {
-                throw new Exception(ex.Message, ex);
+                throw new InvalidOperationException(ex.Message, ex);
             }
         }
     }

@@ -1,7 +1,6 @@
 ﻿using ActivationWs.Data;
 using ActivationWs.Exceptions;
 using ActivationWs.Models;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.Data.Common;
 using System.Text.RegularExpressions;
@@ -11,14 +10,18 @@ namespace ActivationWs.Services
     public class ActivationProcessor {
         private readonly ILogger<ActivationProcessor> _logger;
         private readonly ActivationDbContext _context;
+        private readonly ActivationService _activationService;
 
         private static readonly Regex hostNameRegex = new Regex(@"^(?=.{1,253}$)(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.?)+$", RegexOptions.Compiled);
         private static readonly Regex installationIDRegex = new Regex(@"^\d{63}$", RegexOptions.Compiled);
         private static readonly Regex extendedProductIDRegex = new Regex(@"^\d{5}-\d{5}-\d{3}-\d{6}-\d{2}-\d{4}-\d+\.\d{4}-\d{7}$", RegexOptions.Compiled);
 
-        public ActivationProcessor(ILogger<ActivationProcessor> logger, ActivationDbContext context) {
+        public ActivationProcessor(ILogger<ActivationProcessor> logger,
+                                   ActivationDbContext context,
+                                   ActivationService activationService) {
             _logger = logger;
             _context = context;
+            _activationService = activationService;
         }
 
         public async Task<string> GetConfirmationIDAsync(string hostName, string installationID, string extendedProductID) {
@@ -37,7 +40,6 @@ namespace ActivationWs.Services
                 throw new ArgumentException("The format of the Extended Product ID is invalid.");
             }
 
-            // Try to read from the database, but continue if it fails
             try {
                 var existingRecord = await _context.ActivationRecords
                     .AsNoTracking()
@@ -52,54 +54,47 @@ namespace ActivationWs.Services
                 _logger.LogWarning(dbEx.Message, "Failed to retrieve the Confirmation ID from the database.");
             }
 
-            // If not found in the database or DB query failed, call the web service
             string result;
             try {
                 _logger.LogInformation("About to acquire the Confirmation ID from the Microsoft Activation Service...");
-                result = await ActivationService.CallWebServiceAsync(1, installationID, extendedProductID);
+                result = await _activationService.CallWebServiceAsync(1, installationID, extendedProductID);
 
-                if (!string.IsNullOrEmpty(result)) {
-                    // Find or create the machine by hostname
+                try {
                     var machine = await _context.Machines.FirstOrDefaultAsync(m => m.Hostname == hostName);
-                    if (machine == null)
-                    {
+                    if (machine == null) {
                         machine = new Machine { Hostname = hostName };
-                        _context.Machines.Add(machine);
+                        await _context.Machines.AddAsync(machine);
                         await _context.SaveChangesAsync();
                     }
 
-                    // Save the Confirmation ID to the database
-                    try {
-                        var newRecord = new ActivationRecord
-                        {
-                            MachineId = machine.Id,
-                            InstallationID = installationID,
-                            ExtendedProductID = extendedProductID,
-                            ConfirmationID = result,
-                            LicenseAcquisitionDate = DateTime.UtcNow
-                        };
+                    var newRecord = new ActivationRecord {
+                        MachineId = machine.Id,
+                        InstallationID = installationID,
+                        ExtendedProductID = extendedProductID,
+                        ConfirmationID = result,
+                        LicenseAcquisitionDate = DateTime.UtcNow
+                    };
 
-                        _context.ActivationRecords.Add(newRecord);
-                        await _context.SaveChangesAsync();
+                    await _context.ActivationRecords.AddAsync(newRecord);
+                    await _context.SaveChangesAsync();
 
-                        _logger.LogInformation("A new record has been added to the database: Hostname={0}, InstallationID={1}, ExtendedProductID={2}, ConfirmationID={3}", hostName, installationID, extendedProductID, result);
-                    }
-                    catch (Exception dbEx) {
-                        _logger.LogWarning(dbEx, "Failed to save the new ActivationRecord to the database.");
-                    }
+                    _logger.LogInformation(
+                        "A new record has been added to the database: Hostname={0}, InstallationID={1}, ExtendedProductID={2}, ConfirmationID={3}",
+                        hostName, installationID, extendedProductID, result);
                 }
-            }
-            catch (HttpRequestException httpEx) {
-                _logger.LogError(httpEx, "HTTP request to the Microsoft Activation Service failed.");
-                throw new HttpRequestException(httpEx.Message);
+                catch (Exception dbEx) {
+                    _logger.LogWarning(dbEx, "Failed to save the new ActivationRecord to the database.");
+                }
 
+            } catch (HttpRequestException httpEx) {
+                _logger.LogError(httpEx, "HTTP request to the Microsoft Activation Service failed.");
+                throw;
             } catch (BasException basEx) {
                 _logger.LogError(basEx, "The Microsoft Activation Service reported an error:");
-                throw new BasException(basEx.Message);
-
+                throw;
             } catch (Exception ex) {
                 _logger.LogError(ex, "Failed to acquire the Confirmation ID from the Microsoft Activation Service.");
-                throw new Exception(ex.Message);
+                throw;
             }
 
             return result;
@@ -112,21 +107,19 @@ namespace ActivationWs.Services
             }
 
             try {
-                var result = await ActivationService.CallWebServiceAsync(2, "", extendedProductID);
+                var result = await _activationService.CallWebServiceAsync(2, "", extendedProductID);
                 _logger.LogInformation("The remaining activation count is: {0}.", result);
                 return result;
 
             } catch (HttpRequestException httpEx) {
                 _logger.LogError(httpEx, "HTTP request to the Microsoft Activation Service failed.");
-                throw new HttpRequestException(httpEx.Message);
-
+                throw;
             } catch (BasException basEx) {
                 _logger.LogError(basEx, "The Microsoft Activation Service reported an error:");
-                throw new BasException(basEx.Message);
-
+                throw;
             } catch (Exception ex) {
                 _logger.LogError(ex, "The remaining activation count could not be retrieved.");
-                throw new Exception(ex.Message);
+                throw;
             }
         }
     }

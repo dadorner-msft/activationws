@@ -1,9 +1,6 @@
 using ActivationWs.Exceptions;
 using ActivationWs.Services;
 using Microsoft.AspNetCore.Mvc;
-using System.Net;
-using System.Text.RegularExpressions;
-using static System.Net.WebRequestMethods;
 
 namespace ActivationWs.Controllers
 {

@@ -14,6 +14,11 @@ Component: Microsoft.EntityFrameworkCore.Sqlite
     License: Apache License 2.0  
     Copyright: Microsoft
 
+Component: Microsoft.Extensions.Http.Resilience
+    Source: NuGet  
+    License: MIT License
+    Copyright: Microsoft
+
 Component: Swashbuckle.AspNetCore  
     Source: NuGet  
     License: MIT License  
@@ -32,7 +37,7 @@ Component: Bootstrap
 Component: jQuery Validation Plugin  
     Source: wwwroot/lib/jquery-validation  
     License: MIT License  
-    Copyright: Jörn Zaefferer
+    Copyright: JÃ¶rn Zaefferer
 
 Component: jQuery Validation Unobtrusive  
     Source: wwwroot/lib/jquery-validation-unobtrusive  

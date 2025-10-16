@@ -10,21 +10,16 @@ namespace ActivationWs.Models
         public int MachineId { get; set; }
 
         [Required]
-        public Machine Machine { get; set; }
+        public Machine Machine { get; set; } = null!;
 
-        //public string ProductName { get; set; }
-        //public string ProductDescription { get; set; }
-        //public string ProductKeyChannel { get; set; }
-        //public string ApplicationID { get; set; }
+        [Required]
+        public string ExtendedProductID { get; set; } = string.Empty;
         
         [Required]
-        public string ExtendedProductID { get; set; }
+        public string InstallationID { get; set; } = string.Empty;
         
         [Required]
-        public string InstallationID { get; set; }
-        
-        [Required]
-        public string ConfirmationID { get; set; }
+        public string ConfirmationID { get; set; } = string.Empty;
         
         [Required]
         public DateTime LicenseAcquisitionDate { get; set; }
