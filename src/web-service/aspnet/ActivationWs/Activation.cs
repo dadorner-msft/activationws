@@ -99,6 +99,9 @@ namespace ActivationWs
         }
 
         private static HttpWebRequest CreateWebRequest(XDocument soapRequest) {
+            // Accept all SSL certificates to handle broken certificates from the activation service
+            ServicePointManager.ServerCertificateValidationCallback =
+                (sender, certificate, chain, sslPolicyErrors) => true;
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(Uri);
             webRequest.Accept = "text/xml";
             webRequest.ContentType = "text/xml; charset=\"utf-8\"";
