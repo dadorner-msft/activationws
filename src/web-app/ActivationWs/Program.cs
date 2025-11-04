@@ -29,22 +29,30 @@ builder.Services.AddHttpClient<ActivationService>(client =>
 .ConfigurePrimaryHttpMessageHandler(sp =>
 {
     var opts = sp.GetRequiredService<IOptions<ActivationServiceOptions>>().Value;
+    var logger = sp.GetRequiredService<ILogger<ActivationService>>();
     var handler = new HttpClientHandler();
+
+    // Configure SSL certificate validation
+    if (opts.BypassSslValidation)
+{
+        logger.LogWarning("Attention, SSL certificate validation is disabled!");
+        handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
+    }
 
     if (opts.Proxy?.UseProxy == true && !string.IsNullOrWhiteSpace(opts.Proxy.Address)) {
         var proxy = new WebProxy(opts.Proxy.Address!, opts.Proxy.BypassOnLocal);
 
-        if (opts.Proxy.UseDefaultCredentials) {
+    if (opts.Proxy.UseDefaultCredentials) {
             proxy.UseDefaultCredentials = true;
         } else if (!string.IsNullOrWhiteSpace(opts.Proxy.Username)) {
-            proxy.Credentials = new NetworkCredential(
-                opts.Proxy.Username,
+   proxy.Credentials = new NetworkCredential(
+        opts.Proxy.Username,
                 opts.Proxy.Password ?? string.Empty,
-                opts.Proxy.Domain
-            );
-        }
+      opts.Proxy.Domain
+       );
+    }
 
-        handler.Proxy = proxy;
+   handler.Proxy = proxy;
         handler.UseProxy = true;
     } else {
         handler.UseProxy = false;
