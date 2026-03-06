@@ -26,6 +26,11 @@
         </form>
     </div>
 
+    <!-- Total Count -->
+    <div class="mb-3">
+        <strong>Total activations: @Model.Machines.Count()</strong>
+    </div>
+
     <!-- Results Table -->
     @if (Model.Machines.Any())
     { 
