@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Reporting &ndash; ActivationWs</title>
+    <link rel="stylesheet" href="css/site.css" />
+    <link rel="icon" href="favicon.ico" sizes="any" />
+</head>
+<body class="layout--wide">
+    <header class="site-header">
+        <div class="site-header__inner">
+            <a class="site-header__brand" href="index.html">
+                <img class="site-header__logo" src="logo_color.png" alt="ActivationWs" width="958" height="159" />
+            </a>
+            <nav class="nav" aria-label="Main">
+                <a href="index.html">Home</a>
+                <a href="reporting.html" aria-current="page">Reporting</a>
+            </nav>
+        </div>
+    </header>
+
+    <div id="storageBanner" class="banner banner--error" role="alert" hidden>
+        Activation storage is unavailable. Activations are temporarily disabled.
+    </div>
+
+    <main class="page">
+        <header class="page__header">
+            <h1>Reporting</h1>
+            <p>Activation history.</p>
+        </header>
+
+        <section class="card">
+            <form id="searchForm" class="toolbar" role="search">
+                <div class="field field--inline">
+                    <label for="hostSearch">Enter hostname...</label>
+                    <input type="text" id="hostSearch" name="host" autocomplete="off" maxlength="253"
+                           aria-describedby="searchHint" />
+                </div>
+                <button type="submit">Search</button>
+                <button type="button" id="resetSearch" class="button--secondary">Clear</button>
+                <a id="exportCsv" class="button button--secondary toolbar__end" href="api/v1/activationservice/records.csv"
+                   download hidden>Export CSV</a>
+            </form>
+            <p id="searchHint" class="field__hint">Matches any part of the host name.</p>
+
+            <div id="status" class="result" role="status" aria-live="polite" hidden></div>
+
+            <div class="table-scroll">
+                <table id="recordsTable" class="table">
+                    <caption id="tableCaption" class="table__caption"></caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Host</th>
+                            <th scope="col">Installation ID</th>
+                            <th scope="col">Extended Product ID</th>
+                            <th scope="col">Confirmation ID</th>
+                            <th scope="col" class="table__number">Requests</th>
+                            <th scope="col">Created</th>
+                            <th scope="col">Last requested</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsBody"></tbody>
+                </table>
+            </div>
+
+            <nav class="pager" aria-label="Pagination">
+                <button type="button" id="previousPage">Previous</button>
+                <span id="pageInfo" class="pager__info"></span>
+                <button type="button" id="nextPage">Next</button>
+            </nav>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-footer__inner">
+            <span id="appVersion" hidden></span> | Licensed under the <a href="https://github.com/dadorner-msft/activationws/blob/main/LICENSE">MIT</a> license | <a href="https://github.com/dadorner-msft/ActivationWs">Check for updates...</a>
+        </div>
+    </footer>
+
+    <script src="js/reporting.js"></script>
+    <script src="js/version.js"></script>
+    <script src="js/storage-status.js"></script>
+</body>
+</html>

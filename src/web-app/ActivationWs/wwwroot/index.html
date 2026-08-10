@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>ActivationWs</title>
+    <link rel="stylesheet" href="css/site.css" />
+    <link rel="icon" href="favicon.ico" sizes="any" />
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header__inner">
+            <a class="site-header__brand" href="index.html">
+                <img class="site-header__logo" src="logo_color.png" alt="ActivationWs" width="958" height="159" />
+            </a>
+            <nav class="nav" aria-label="Main">
+                <a href="index.html" aria-current="page">Home</a>
+                <a href="reporting.html">Reporting</a>
+            </nav>
+        </div>
+    </header>
+
+    <div id="storageBanner" class="banner banner--error" role="alert" hidden>
+        Activation storage is unavailable. Activations are temporarily disabled.
+    </div>
+
+    <main class="page">
+        <header class="page__header">
+            <h1>Welcome</h1>
+            <p>Use this page to perform a manual MAK activation or check the remaining MAK activation count.</p>
+        </header>
+
+        <section class="card">
+            <fieldset class="choice">
+                <legend>Select action</legend>
+                <div class="choice__option">
+                    <input type="radio" id="actionConfirmationId" name="actionType" value="confirmation" checked />
+                    <label for="actionConfirmationId">Acquire Confirmation ID</label>
+                </div>
+                <div class="choice__option">
+                    <input type="radio" id="actionActivationCount" name="actionType" value="count" />
+                    <label for="actionActivationCount">Retrieve remaining activation count</label>
+                </div>
+            </fieldset>
+
+            <form id="confirmationIdForm" novalidate>
+                <div class="field">
+                    <label for="hostName">Hostname</label>
+                    <input type="text" id="hostName" name="hostName" autocomplete="off" maxlength="253" required />
+                </div>
+                <div class="field">
+                    <label for="installationId">Installation ID</label>
+                    <input type="text" id="installationId" name="installationId" inputmode="numeric" autocomplete="off"
+                           required />
+                </div>
+                <div class="field">
+                    <label for="extendedProductId">Extended Product ID</label>
+                    <input type="text" id="extendedProductId" name="extendedProductId" autocomplete="off"
+                           required />
+                </div>
+                <button type="submit">Submit</button>
+            </form>
+
+            <form id="activationCountForm" hidden novalidate>
+                <div class="field">
+                    <label for="countExtendedProductId">Extended Product ID</label>
+                    <input type="text" id="countExtendedProductId" name="extendedProductId" autocomplete="off"
+                           required />
+                </div>
+                <button type="submit">Submit</button>
+            </form>
+
+            <div id="result" class="result" role="status" aria-live="polite" hidden></div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-footer__inner">
+            <span id="appVersion" hidden></span> | Licensed under the <a href="https://github.com/dadorner-msft/activationws/blob/main/LICENSE">MIT</a> license | <a href="https://github.com/dadorner-msft/ActivationWs">Check for updates...</a>
+        </div>
+    </footer>
+
+    <script src="js/site.js"></script>
+    <script src="js/version.js"></script>
+    <script src="js/storage-status.js"></script>
+</body>
+</html>

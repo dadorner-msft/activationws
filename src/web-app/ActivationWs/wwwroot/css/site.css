@@ -1,40 +1,432 @@
-html {
-    font-size: 14px;
-    position: relative;
-    min-height: 100%;
+:root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --shell: #ffffff;
+    --border: #dee2e6;
+    --input-border: #ced4da;
+    --text: #212529;
+    --muted: #6c757d;
+    --accent: #0d6efd;
+    --accent-hover: #0b5ed7;
+    --accent-contrast: #ffffff;
+    --card-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075);
+    --success-bg: #d1e7dd;
+    --success-border: #a3cfbb;
+    --success-text: #0a3622;
+    --error-bg: #f8d7da;
+    --error-border: #f1aeb5;
+    --error-text: #58151c;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #14171c;
+        --surface: #1d2127;
+        --shell: #191d23;
+        --border: #333a44;
+        --input-border: #414a56;
+        --text: #e8eaed;
+        --muted: #9aa4b0;
+        --accent: #3d8bfd;
+        --accent-hover: #5b9cfd;
+        --accent-contrast: #08131f;
+        --card-shadow: none;
+        --success-bg: #16301f;
+        --success-border: #2f6b43;
+        --success-text: #9fe0b6;
+        --error-bg: #331917;
+        --error-border: #7c3630;
+        --error-text: #f3b3ac;
+    }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-    /* outline: none; */
-    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+* {
+    box-sizing: border-box;
+}
+
+/* Author level display rules outrank the user agent style for [hidden], so it is restated here. */
+[hidden] {
+    display: none !important;
 }
 
 body {
-  margin-bottom: 60px;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
 }
 
-.navbar-brand {
-    width: 120px;
-    padding: 0;
+/* The shell keeps the header, content and footer on a shared measure. Pages that need more room
+   set the wide layout on the body so all three stay aligned. */
+.site-header__inner,
+.site-footer__inner,
+.page {
+    width: 100%;
+    max-width: 60rem;
+    margin: 0 auto;
+    padding-inline: 1rem;
+}
+
+.layout--wide .site-header__inner,
+.layout--wide .site-footer__inner,
+.layout--wide .page {
+    max-width: 75rem;
+}
+
+.site-header {
+    background: var(--shell);
+    border-bottom: 1px solid var(--border);
+}
+
+/* Full-width notice shown below the header while a dependency (the activation store) is unavailable. */
+.banner {
+    padding: .75rem 1rem;
+    text-align: center;
+    font-weight: 600;
+    border-bottom: 1px solid transparent;
+}
+
+.banner--error {
+    background: var(--error-bg);
+    border-bottom-color: var(--error-border);
+    color: var(--error-text);
+}
+
+.site-header__inner {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem 1.5rem;
+    padding-block: .75rem;
+}
+
+.site-header__brand {
+    display: inline-flex;
     align-items: center;
 }
 
-.navbar-logo {
-    width: 100%;
-    height: auto;
-    max-width: 100%;
+.site-header__logo {
     display: block;
+    height: 1.375rem;
+    width: auto;
 }
 
-.box {
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+.page {
+    flex: 1;
+    padding-block: 2.5rem 3rem;
+}
+
+.site-footer {
+    background: var(--shell);
+    border-top: 1px solid var(--border);
+}
+
+.site-footer__inner {
+    padding-block: 1rem;
+    font-size: .875rem;
+    color: var(--text);
+}
+
+.site-footer a {
+    color: var(--accent);
+}
+
+.nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    font-size: 1rem;
+}
+
+.nav a {
+    color: var(--text);
+    text-decoration: none;
+}
+
+.nav a:hover {
+    text-decoration: underline;
+}
+
+.page__header {
+    text-align: center;
+}
+
+.page__header h1 {
+    margin: 0 0 .5rem;
+    font-size: 3.5rem;
+    font-weight: 300;
+    line-height: 1.2;
+}
+
+.page__header p {
+    margin: 0 0 1.75rem;
+}
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: .375rem;
+    box-shadow: var(--card-shadow);
+    padding: 1.5rem;
+}
+
+.choice {
+    border: 0;
+    margin: 0 0 1.5rem;
+    padding: 0;
+}
+
+.choice legend {
+    padding: 0;
+    margin-bottom: .5rem;
+    font-size: 1.0625rem;
+}
+
+.choice__option {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .1rem 0;
+}
+
+.choice__option label {
+    cursor: pointer;
+}
+
+.field {
+    margin-bottom: 1rem;
+}
+
+.field > label {
+    display: block;
+    margin-bottom: .35rem;
+}
+
+.field__hint {
+    margin: .3rem 0 0;
+    font-size: .8125rem;
+    color: var(--muted);
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: .375rem .75rem;
+    border: 1px solid var(--input-border);
+    border-radius: .375rem;
+    background: var(--surface);
+    color: inherit;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+}
+
+input[type="text"]:focus-visible,
+button:focus-visible,
+.button:focus-visible,
+input[type="radio"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+button,
+.button {
+    display: inline-block;
+    padding: .375rem .75rem;
+    border: 0;
+    border-radius: .375rem;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+button:hover:not(:disabled),
+.button:hover {
+    background: var(--accent-hover);
+}
+
+button:disabled {
+    opacity: .6;
+    cursor: progress;
+}
+
+.result {
+    margin-top: 1.25rem;
+    padding: .85rem 1rem;
+    border: 1px solid;
+    border-radius: .5rem;
+    overflow-wrap: anywhere;
+}
+
+.result--pending,
+.result--empty {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--muted);
+}
+
+.result--pending {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+
+.result--success {
+    background: var(--success-bg);
+    border-color: var(--success-border);
+    color: var(--success-text);
+}
+
+.result--error {
+    background: var(--error-bg);
+    border-color: var(--error-border);
+    color: var(--error-text);
+}
+
+.result__value {
+    display: block;
+    margin-top: .25rem;
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: 1.05rem;
+    letter-spacing: .04em;
+    user-select: all;
+}
+
+.result__note {
+    display: block;
+    margin-top: .4rem;
+    font-size: .85rem;
+    opacity: .85;
+}
+
+.result__errors {
+    margin: .4rem 0 0;
+    padding-left: 1.2rem;
+}
+
+.spinner {
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: .75rem;
+}
+
+.field--inline {
+    flex: 1 1 16rem;
+    margin-bottom: 0;
+}
+
+.button--secondary {
+    background: transparent;
+    border: 1px solid var(--input-border);
+    color: inherit;
+}
+
+.button--secondary:hover:not(:disabled) {
+    background: var(--bg);
+}
+
+/* Pushes the export action to the opposite end of the search toolbar. */
+.toolbar__end {
+    margin-inline-start: auto;
+}
+
+.table-scroll {
+    margin-top: 1.25rem;
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .875rem;
+}
+
+.table__caption {
+    margin-bottom: .5rem;
+    color: var(--muted);
+    font-size: .8125rem;
+    text-align: left;
+}
+
+.table th,
+.table td {
+    padding: .5rem .6rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-bottom-width: 2px;
+    white-space: nowrap;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.table__mono {
+    max-width: 14rem;
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: .8125rem;
+    overflow-wrap: anywhere;
+}
+
+/* Qualified so the alignment wins over the ".table th, .table td" rule above. */
+.table th.table__number,
+.table td.table__number {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.table__nowrap {
+    white-space: nowrap;
+}
+
+.pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-top: 1.25rem;
+}
+
+.pager__info {
+    color: var(--muted);
+    font-size: .875rem;
+    font-variant-numeric: tabular-nums;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spinner { animation-duration: 3s; }
+}
+
+@media (max-width: 36rem) {
+    .page__header h1 {
+        font-size: 2.5rem;
+    }
 }

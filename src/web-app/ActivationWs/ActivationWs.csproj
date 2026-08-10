@@ -1,28 +1,24 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>c85e851e-b442-47e3-8449-c9c345783270</UserSecretsId>
+    <!-- Shown in the site footer. Bump this for a release. -->
+    <Version>0.95.8</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.10" />
-    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.10.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.10" />
+    <!-- Pinned to avoid CVE-2025-6965 in the transitive SQLitePCLRaw.lib.e_sqlite3 2.1.11 (SQLite &lt; 3.50.2). -->
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.12" />
   </ItemGroup>
 
+  <!-- The activation store is runtime state, never source. Keeps a developer's database out of
+       the build and publish output even if the default item globs change. -->
   <ItemGroup>
-    <Folder Include="Migrations\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="wwwroot\logo_color.png" />
+    <Content Remove="**\*.db;**\*.db-shm;**\*.db-wal" />
+    <None Remove="**\*.db;**\*.db-shm;**\*.db-wal" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,29 @@
+﻿@ActivationWs_HostAddress = http://localhost:5106
+@ExtendedProductId = 03612-03363-000-000000-00-1033-9600.0000-1662020
+@InstallationId = 123456789012345678901234567890123456789012345678901234567890123
+
+### Request a Confirmation ID
+POST {{ActivationWs_HostAddress}}/api/v1/activationservice/confirmation-id
+Content-Type: application/json
+Accept: application/json
+
+{
+  "installationId": "{{InstallationId}}",
+  "extendedProductId": "{{ExtendedProductId}}",
+  "hostName": "TESTPC01"
+}
+
+### Request the remaining activation count
+POST {{ActivationWs_HostAddress}}/api/v1/activationservice/count
+Content-Type: application/json
+Accept: application/json
+
+{
+  "extendedProductId": "{{ExtendedProductId}}"
+}
+
+### Health probe
+GET {{ActivationWs_HostAddress}}/health
+Accept: application/json
+
+###

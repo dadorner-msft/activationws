@@ -1,0 +1,21 @@
+root = true
+
+[*]
+indent_style = space
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cs,csproj,slnx,json,html,css,js}]
+indent_size = 4
+
+# Kernighan and Ritchie brace style: the opening brace stays on the line that
+# introduces the block, and else/catch/finally are cuddled to the closing brace.
+[*.cs]
+csharp_new_line_before_open_brace = none
+csharp_new_line_before_else = false
+csharp_new_line_before_catch = false
+csharp_new_line_before_finally = false
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
